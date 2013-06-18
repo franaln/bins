@@ -1,0 +1,12 @@
+#! /usr/bin/env bash
+
+echo 
+
+read -p "Are you sure you want to delete ~/temp content?!? (y/n)" -n 1 -r
+
+if [[ $REPLY =~ ^[Yy]$ ]] ;then
+    rm -rf $HOME/temp/* 
+    exit 0
+else
+    exit 1
+fi

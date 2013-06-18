@@ -1,0 +1,32 @@
+#! /bin/bash
+
+# Create a tar.gz from the folder
+# Usage: backup <directory> <name>
+# This will create a tar.gz with name name_YYYY_DDMM.tar.gz from  directory 
+
+if [ $# -lt 2 ] ; then
+    echo "Usage: backup <directory> <name>"
+    echo "'Create a tar.gz with name <name>_YYYY_M_DD.tar.gz with the <directory> content and move it to Dropbox/Backups'"
+    exit 0
+fi
+
+folder=$1
+name=$2
+
+dropboxbackup=/home/fran/Dropbox/Backup
+
+echo ":: Creating backup for "$folder" with name "$name" ..."
+
+tarname=$name"_"$(date +%Y)"_"$(date +%b)"_"$(date +%d)".tar.gz"
+
+
+# create tar file
+tar -cvzf $tarname $folder
+
+# move tar file to ~/Backups
+mv $tarname $dropboxbackup/$tarname
+
+echo ":: Done. Backup was created in Dropbox/Backups folder"
+
+
+

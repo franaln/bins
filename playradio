@@ -1,0 +1,12 @@
+#! /usr/bin/env bash
+
+while :
+do
+    notify-send "Playing Metro 95.3 :)"
+    mplayer "mms://201.212.5.144/metro"
+    sleep 5
+done
+
+
+
+

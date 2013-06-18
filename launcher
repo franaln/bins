@@ -1,0 +1,236 @@
+#!/bin/bash
+#
+# *One launcher to rule them all*
+#
+# Usage: launcher [apps|windows|power|calc|config|home|find]
+# Maybe is a good idea to assign a keybind for each option
+#
+
+
+# Dmenu config
+font=envypn-15
+sf_color=#dedede
+sb_color=#534eb4
+nf_color=#dedede
+nb_color=#2a2a2a
+height=28
+
+# Center dmenu in the screen
+xres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f1`
+width=$[$xres * 1 /3]
+xpos=$[$xres / 2 - $width / 2]
+yres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f2`
+ypos=$[$yres / 2 - $height / 2]       
+
+
+# Execute dmenu with the specific options. Takes the prompt as an option
+function xdmenu()
+{
+    dmenu -l 5 -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
+}
+
+option=""
+
+# If there is no input show options...
+if [ $# -eq 0 ] ; then
+    launcheropts="apps\nwindows\nhome\npower\nconfigs\nscreens\nfind\ncalc"
+    choice=$(echo -e $launcheropts | xdmenu "launcher")
+    if [ "$choice" == "" ] ; then
+	exit 1
+    else
+	option=$choice
+    fi
+
+# Else go to the correspondig option
+else
+    option=$1
+fi
+
+
+# Different launcher options
+case "$option" in
+
+
+    ## Home folder (Change to "bookmarked" places!)
+    home)
+
+	choice=`ls $HOME | xdmenu "home"`
+	
+	if [ "$choice" == "" ] ; then
+	    exit 1
+	elif [ -d "$HOME/$choice" ] ; then
+	    dolphin $HOME/$choice &
+	else
+	    exit 1
+	fi
+	;;
+    
+
+    ## Change window
+    windows)
+	
+	win=`wmctrl -l | colrm 1 19 | sed '/tint2/d' | xdmenu "windows"`
+	
+	if [ "$win" == "" ] ; then
+	    exit
+	elif [ "$win" == "Desktop" ] ; then
+	    wmctrl -k on
+	else
+	    wmctrl -a $win
+	fi
+	;;
+
+
+    ## Power options
+    power)
+	
+	COMMANDS="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate\n"
+
+	command=$(echo -e $COMMANDS |  xdmenu "power")
+	
+	if [ "$command" = "" ] ; then
+	    exit 1
+	elif [ "$command" = "logout" ] ; then
+	    openbox --exit
+	elif [ "$command" = "lock" ] ; then
+	    
+	    exit 0
+	else
+	    systemctl $command 
+	    exit 0
+	fi
+	;;
+
+    
+    ## Open apps
+    apps)
+	
+	cachedir=${XDG_CACHE_HOME:-"$HOME/.cache"}
+	
+	if [ -d "$cachedir" ]; then
+	    cache=$cachedir/dmenu_apps
+	else
+	    cache=$HOME/.dmenu_apps_cache # if no xdg dir, fall back to dotfile in ~
+	fi
+	( 
+	    IFS=:
+	    if stest -dqr -n "$cache" $PATH; then
+		stest -flx $PATH | sort -u | tee "$cache" | xdmenu "apps"
+	    else
+		xdmenu "apps" < "$cache"
+	    fi
+	) | ${SHELL:-"/bin/sh"} &
+	;;
+
+
+    ## Edit config files
+    config)
+
+	configfiles="bashrc\nmenu.xml\nrc.xml\ntint2rc\nplotterrc\n"
+
+	cmd=$(echo -e $configfiles | xdmenu "config")
+
+	case ${cmd%% *} in
+	    bashrc)	  exec urxvt -e emacs -nw /home/fran/.bashrc	                ;;
+	    rc.xml)	  exec urxvt -e emacs -nw /home/fran/.config/openbox/rc.xml	;;
+	    menu.xml)     exec urxvt -e emcas -nw /home/fran/.config/openbox/menu.xml	;;
+	    tint2rc)      exec urxvt -e emacs -nw /home/fran/.config/tint2/tint2rc	;;
+	    duntsrc)      exec urxvt -e emacs -nw /home/fran/.dunstrc                   ;;
+	    plotterrc)    exec urxvt -e emacs -nw /home/fran/.plotterrc          	;;
+	esac
+	;;
+
+
+    ## Calculator
+    calc)
+	xsel -o | xdmenu "calc" | xargs echo | bc 2>&1 | xdmenu "result" | xsel -i
+	;;
+
+
+    ## Find files
+    find)
+	input=$(xsel -o | xdmenu "search")
+	result=""
+	if [ "$input" != '' ] ; then
+	    result=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
+	fi
+	
+	if [ "$result" != "" ] ; then
+	    xdg-open "$result"
+	fi
+	;;
+
+
+    ## Screen/VGA/HDMI options
+    screens)
+
+	devices=$(xrandr -q | grep [[:upper:]]1)
+
+     	#device=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 1)
+	#state=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 2)
+
+	availableopts="Laptop only\n"
+
+	if [[ $devices == *"VGA1 connected"* ]] ; then
+	    availableopts+="VGA only\nLatop & VGA\n"
+	fi
+
+	if [[ $devices == *"HDMI1 connected"* ]] ; then
+	    availableopts+="HDMI only\nHDMI & Laptop\n"
+	fi
+
+	choice=$(echo -e $availableopts | xdmenu "screens")
+
+	case "$choice" in
+	    
+	    "Laptop Only")
+	    	xrandr --output eDP1  --auto
+		xrandr --output VGA1  --off
+		xrandr --output HDMI1 --off
+		;;
+	    "VGA only")
+		xrandr --output VGA1  --auto
+	    	xrandr --output eDP1  --off
+		xrandr --output HDMI1 --off
+		;;
+	    "HDMI only")
+		xrandr --output HDMI1 --auto
+		xrandr --output VGA1  --off
+	    	xrandr --output eDP1  --off
+		;;
+	    "Laptop & VGA")
+	    	xrandr --output eDP1  --auto
+		xrandr --output VGA1  --auto
+		xrandr --output HDMI1 --off
+		;;
+	    "Laptop & HDMI")
+	    	xrandr --output eDP1  --auto
+		xrandr --output HDMI1 --auto
+		xrandr --output VGA1  --off
+		;;
+	    
+	esac
+	exit 0 
+	;;
+	   
+    mount)
+    
+	choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
+	
+	if [[ $choice == "" ]] ; then
+	    exit 1
+	else
+	    sudo mount $choice /run 
+	    
+	    # # Show options, get choice
+	    # choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | $DMENU -p "Drive to umount:")
+	    
+	    # if [[ $choice ]]; then
+	    #         sudo umount $choice
+	    # fi
+	fi
+
+esac
+
+
+
