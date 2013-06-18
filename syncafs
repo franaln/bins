@@ -1,0 +1,53 @@
+#! /bin/bash
+
+# Options: 
+#        push : sincronizar afs-work with THIS pc  (-->)
+#        pull : sincronizar THIS pc with afs-work  (<--)
+#        check: dry-run para saber si hay algun cambio
+
+
+# Config
+UserName="falonso"
+LocalDir="/home/fran/work/Susy/"                #MUY importante la barra final!
+AFSDir="/afs/cern.ch/work/f/falonso/Susy/"
+Server="lxplus.cern.ch"
+BasicOptions=" -aurzv -h --progress --delete " 
+
+Mode=$1
+
+# Some input check before script
+if [ -z $1 ] ; then
+    echo "[syncafs] Usage: syncafs [push|pull|check]"
+    echo "                 push means --> "
+    echo "                 pull means <-- "
+    echo "                 check the differences "
+    exit -1
+fi
+
+
+echo  "[syncafs] Sync work/Susy directory"
+
+# Mode "push"
+if [ "$Mode" == "push" ]; then
+  
+    rsync $BasicOptions --stats $LocalDir "$UserName@$Server:$AFSDir"
+    
+fi
+
+# Mode "pull"
+if [ "$Mode" == "pull" ]; then
+
+    rsync $BasicOptions --stats $UserName@lxplus.cern.ch:$AFSDir $LocalDir
+
+fi
+
+# Mode "check"
+if [ "$Mode" == "check" ]; then
+
+    echo ":: If \"push\": "
+    rsync $BasicOptions --itemize-changes --dry-run $LocalDir "$UserName@lxplus.cern.ch:$AFSDir"
+
+    echo ":: If \"pull\": "
+    rsync $BasicOptions --itemize-changes --dry-run "$UserName@lxplus.cern.ch:$AFSDir" $LocalDir
+
+fi

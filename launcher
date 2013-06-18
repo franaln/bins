@@ -1,13 +1,14 @@
 #!/bin/bash
 #
-# *One launcher to rule them all*
+# * One menu to rule them all*
 #
-# Usage: launcher [apps|windows|power|calc|config|home|find]
+# Usage: launcher [option]    
+# Options available: apps, windows, power, calc, config, home, find, screen. If not option is provide, it will show the options availables.
 # Maybe is a good idea to assign a keybind for each option
 #
 
 
-# Dmenu config
+# dmenu style config
 font=envypn-15
 sf_color=#dedede
 sb_color=#534eb4
@@ -29,11 +30,11 @@ function xdmenu()
     dmenu -l 5 -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
 }
 
-option=""
 
+option=""
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-    launcheropts="apps\nwindows\nhome\npower\nconfigs\nscreens\nfind\ncalc"
+    launcheropts="apps\nwindows\nhome\npower\nconfigs\nscreen\nfind\ncalc"
     choice=$(echo -e $launcheropts | xdmenu "launcher")
     if [ "$choice" == "" ] ; then
 	exit 1
@@ -84,16 +85,16 @@ case "$option" in
     ## Power options
     power)
 	
-	COMMANDS="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate\n"
+	poweropts="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate\n"
 
-	command=$(echo -e $COMMANDS |  xdmenu "power")
+	choice=$(echo -e $poweropts |  xdmenu "power")
 	
-	if [ "$command" = "" ] ; then
+	if [ "$choice" = "" ] ; then
 	    exit 1
-	elif [ "$command" = "logout" ] ; then
+	elif [ "$choice" = "logout" ] ; then
 	    openbox --exit
-	elif [ "$command" = "lock" ] ; then
-	    
+	elif [ "$choice" = "lock" ] ; then
+	    xscreensaver-command --lock
 	    exit 0
 	else
 	    systemctl $command 
@@ -126,17 +127,20 @@ case "$option" in
     ## Edit config files
     config)
 
-	configfiles="bashrc\nmenu.xml\nrc.xml\ntint2rc\nplotterrc\n"
+	configfiles="bashrc\nbash.alias\nbash.fns\nbash.vars\nrc.xml\nmenu.xml\nautostart\ntint2rc\nplotterrc\n"
 
 	cmd=$(echo -e $configfiles | xdmenu "config")
 
 	case ${cmd%% *} in
-	    bashrc)	  exec urxvt -e emacs -nw /home/fran/.bashrc	                ;;
-	    rc.xml)	  exec urxvt -e emacs -nw /home/fran/.config/openbox/rc.xml	;;
-	    menu.xml)     exec urxvt -e emcas -nw /home/fran/.config/openbox/menu.xml	;;
-	    tint2rc)      exec urxvt -e emacs -nw /home/fran/.config/tint2/tint2rc	;;
-	    duntsrc)      exec urxvt -e emacs -nw /home/fran/.dunstrc                   ;;
-	    plotterrc)    exec urxvt -e emacs -nw /home/fran/.plotterrc          	;;
+	    bashrc)	  exec urxvt -e $EDITOR $HOME/.bashrc	                  ;;
+	    bash.alias)   exec urxvt -e $EDITOR $HOME/bin/bash.alias              ;;
+	    bash.fns)     exec urxvt -e $EDITOR $HOME/bin/bash.functions          ;;
+	    bash.vars)    exec urxvt -e $EDITOR $HOME/bin/bash.vars               ;;
+	    rc.xml)	  exec urxvt -e $EDITOR $HOME/.config/openbox/rc.xml	  ;;
+	    menu.xml)     exec urxvt -e $EDITOR $HOME/.config/openbox/menu.xml    ;;
+	    autostart)    exec urxvt -e $EDITOR $HOME/.config/openbox/autostart   ;;
+	    tint2rc)      exec urxvt -e $EDITOR $HOME/.config/tint2/tint2rc	  ;;
+	    plotterrc)    exec urxvt -e $EDITOR $HOME/.plotterrc          	  ;;
 	esac
 	;;
 
@@ -162,10 +166,9 @@ case "$option" in
 
 
     ## Screen/VGA/HDMI options
-    screens)
+    screen)
 
 	devices=$(xrandr -q | grep [[:upper:]]1)
-
      	#device=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 1)
 	#state=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 2)
 
@@ -182,7 +185,6 @@ case "$option" in
 	choice=$(echo -e $availableopts | xdmenu "screens")
 
 	case "$choice" in
-	    
 	    "Laptop Only")
 	    	xrandr --output eDP1  --auto
 		xrandr --output VGA1  --off
@@ -208,23 +210,22 @@ case "$option" in
 		xrandr --output HDMI1 --auto
 		xrandr --output VGA1  --off
 		;;
-	    
 	esac
 	exit 0 
 	;;
 	   
-    mount)
+    # mount)
     
-	choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
-	
-	if [[ $choice == "" ]] ; then
-	    exit 1
-	else
-	    sudo mount $choice /run 
-	    
+    # 	choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
+    
+    # 	if [[ $choice == "" ]] ; then
+    # 	    exit 1
+    # 	else
+    # 	    sudo mount $choice /run 
+    
 	    # # Show options, get choice
 	    # choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | $DMENU -p "Drive to umount:")
-	    
+    
 	    # if [[ $choice ]]; then
 	    #         sudo umount $choice
 	    # fi

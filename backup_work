@@ -1,0 +1,25 @@
+#! /bin/bash
+
+# Backup work directory
+# Create work_YYYY_DDMM.tar.gz in the Backups folder
+
+
+# Folders
+work_folder=/home/fran/work/*
+backup_folder=/home/fran/Backups
+
+
+# Create backup
+echo ":: Creating backup for work ..."
+
+
+backup_name="work_"$(date +%Y)"_"$(date +%b)"_"$(date +%d)".tar.gz"
+
+
+# create tar file
+tar -cvzf $backup_folder/$backup_name $work_folder
+
+echo ":: Done. Backup was created in Backups folder"
+
+
+

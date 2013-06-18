@@ -1,9 +1,12 @@
 #! /usr/bin/env bash
+# play radio metro :)
+
+url=mms://201.212.5.144/metro
 
 while :
 do
     notify-send "Playing Metro 95.3 :)"
-    mplayer "mms://201.212.5.144/metro"
+    mplayer $url
     sleep 5
 done
 
