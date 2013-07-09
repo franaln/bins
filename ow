@@ -1,0 +1,52 @@
+#! /bin/bash
+#usage: ow filename
+
+#source
+if [[ $1 =~ \.([ch]|txt|sh|s)$ ]]; then
+    open="$EDITOR"
+ 
+#archive 
+elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]]; then
+    open="ark"
+
+#video 
+elif [[ $1 =~ \.(mkv|mpe?g|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
+    open="mplayer"
+
+#audio 
+elif [[ $1 =~ \.(mp3|wav|ogg)$ ]]; then
+    open="mplayer"
+
+#torrent 
+elif [[ $1 =~ \.torrent ]]; then
+    open="ktorrent"
+
+#pdf     
+elif [[ $1 =~ \.(pdf|ps|eps|djvu)$ ]]; then
+    open="okular"
+
+#image 
+elif [[ $1 =~ \.(jpe?g|png|gif|tiff|bmp|icon)$ ]]; then
+    open="sxiv"
+
+#html     
+elif [[ $1 =~ \.(html?|swf)$ ]]; then
+    open="chromium"
+
+#document 
+elif [[ $1 =~ \.(doc|rtf)$ ]]; then
+    open=""
+
+#windows 
+elif [[ $1 =~ \.exe$ ]]; then
+    open="wine"
+
+#regular file
+else
+    open="$EDITOR"
+fi
+
+#make it so
+#if [ -n "${!1}" ]; then
+setsid setsid $open $1
+#fi
