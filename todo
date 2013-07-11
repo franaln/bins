@@ -5,21 +5,55 @@ todofile=$HOME/.todo
 
 test -f $todofile || touch $todofile
 
+
+# show list
 if test $# = 0 ; then
-    cat $todofile
 
-elif test $1 = -l ; then
-    cat -n $todofile
+    if test `cat $todofile | wc -l` = 0; then
+	exit 0
+    else
+	echo "[todo]"
+	echo
+	
+	cat $todofile | while read sample ; do
+	    echo "* "$sample
+	    
+	done
+	echo
+    fi
 
+# show usage
+elif test $1 = -h ; then
+
+    echo "[todo] Usage: todo <task to add>"
+    echo "              todo [option]"
+    echo
+    echo "       Options: -r  remove a task"
+    echo "                -c  clear all tasks"
+    echo "                -h  show usage"
+    echo
+
+         
+# clear list
 elif test $1 = -c ; then
     > $todofile
 
+# remove task
 elif test $1 = -r ; then 
-    cat -n $todofile
-    echo -ne "----------------------------\nType a number to remove: "
+
+    i=1
+    cat $todofile | while read sample ; do
+	    echo "* $sample ($i)"
+	    i=$(($i+1))
+	    
+    done
+
+    echo -ne "Type a number to remove: "
     read NUMBER
     sed -ie ${NUMBER}d $todofile
 
+# add task
 else
     echo $@ >> $todofile
+
 fi

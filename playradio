@@ -9,7 +9,3 @@ do
     mplayer $url
     sleep 5
 done
-
-
-
-
