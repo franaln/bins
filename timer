@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [[ "$1" == *s ]] ; then
+    wait=$(echo $1 | sed 's:s::')
+
+elif [[ "$1" == *m ]] ; then
+    min=$(echo $1 | sed 's:m::')
+    wait=$(($min*60))
+fi
+
+# Wait :P
+sleep $wait
+
+# Notification! and sound?!
+notify-send "Timer"
+#aplay ~/bin/utils/alarm.wav
