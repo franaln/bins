@@ -16,28 +16,27 @@ bar_width="180"       # width of volume bar
 bar_height="7"        # width of volume bar
 
 device="Master"
-#stringtogrep="Mono: P"
-stringtogrep="Front Left: P"
+stringtogrep="Mono: P"
+#stringtogrep="Front Left: P"
 
 pipe="/tmp/volumepipe"
 
 # Lets find the appropriate positioning for the volume bar
-xres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f1`
+dimensions=`xdpyinfo | grep 'dimensions:' | awk '{print $2}'`
+xres=`echo $dimensions | cut -dx -f1`
+yres=`echo $dimensions | cut -dx -f2`
 xpos=$[$xres / 2 - $width / 2]       
-yres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f2`
 ypos=$[$yres * 2 / 3 - $height / 2] 
 
 # Increase/drecrease volume
 function increase_volume()
 {
-    changevol=$1%+
-    amixer -q set $device $changevol
+    amixer -q set $device $1%+
 }
 
 function decrease_volume()
 {
-    changevol=$1%-
-    amixer -q set $device $changevol
+    amixer -q set $device $1%-
 }
 
 # Gets the current volume

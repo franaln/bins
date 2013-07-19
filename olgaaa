@@ -96,7 +96,7 @@ case "$option" in
     ## Open apps. Show recent apps first
     apps)
 	
-	max_recent=199 # Number of recent commands to track
+	max_recent=50 # Number of recent commands to track
 	recent_cache="$cachedir/apps_recent"
 	rest_cache="$cachedir/apps_all"
 
@@ -123,7 +123,6 @@ case "$option" in
 	;;
 
 
-
     ## Edit config files
     config)
 
@@ -132,14 +131,14 @@ case "$option" in
 	cmd=$(echo -e $configfiles | xdmenu "config")
 
 	case ${cmd%% *} in
-	    bashrc)	  exec urxvt -e $EDITOR $HOME/.bashrc	                  ;;
-	    bash_alias)   exec urxvt -e $EDITOR $HOME/bin/bash_alias              ;;
-	    bash_fns)     exec urxvt -e $EDITOR $HOME/bin/bash_fns                ;;
-	    bash_vars)    exec urxvt -e $EDITOR $HOME/bin/bash_vars               ;;
-	    rc.xml)	  exec urxvt -e $EDITOR $HOME/.config/openbox/rc.xml	  ;;
-	    menu.xml)     exec urxvt -e $EDITOR $HOME/.config/openbox/menu.xml    ;;
-	    autostart)    exec urxvt -e $EDITOR $HOME/.config/openbox/autostart   ;;
-	    tint2rc)      exec urxvt -e $EDITOR $HOME/.config/tint2/tint2rc	  ;;
+	    bashrc)	  exec urxvt -e $EDITOR $HOME/dots/bashrc	                  ;;
+	    bash_alias)   exec urxvt -e $EDITOR $HOME/dots/bash_alias              ;;
+	    bash_fns)     exec urxvt -e $EDITOR $HOME/dots/bash_fns                ;;
+	    bash_vars)    exec urxvt -e $EDITOR $HOME/dots/bash_vars               ;;
+	    rc.xml)	  exec urxvt -e $EDITOR $HOME/dots/openbox/rc.xml	  ;;
+	    menu.xml)     exec urxvt -e $EDITOR $HOME/dots/openbox/menu.xml    ;;
+	    autostart)    exec urxvt -e $EDITOR $HOME/dots/openbox/autostart   ;;
+	    tint2rc)      exec urxvt -e $EDITOR $HOME/dots/tint2/tint2rc	  ;;
 	    plotterrc)    exec urxvt -e $EDITOR $HOME/.plotterrc          	  ;;
 	esac
 	;;
@@ -169,8 +168,6 @@ case "$option" in
     screen)
 
 	devices=$(xrandr -q | grep [[:upper:]]1)
-     	#device=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 1)
-	#state=$(xrandr -q | grep [[:upper:]]1 | cut -d ' ' -f 2)
 
 	availableopts="Laptop only"
 
@@ -185,11 +182,10 @@ case "$option" in
 	choice=$(echo -e $availableopts | xdmenu "screens")
 
 	case "$choice" in
-	    "Laptop Only")
-	    	xrandr --output eDP1  --auto
-		sleep 2
-		xrandr --output VGA1  --off
+	    "Laptop only")
+		xrandr --output eDP1 --auto
 		xrandr --output HDMI1 --off
+		xrandr --output VGA1  --off
 		;;
 	    "VGA only")
 		xrandr --output VGA1  --auto
@@ -198,7 +194,6 @@ case "$option" in
 		;;
 	    "HDMI only")
 		xrandr --output HDMI1 --auto
-		sleep 2
 		xrandr --output VGA1  --off
 	    	xrandr --output eDP1  --off
 		;;

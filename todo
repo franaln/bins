@@ -48,7 +48,7 @@ elif test $1 = -r ; then
 	    
     done
 
-    echo -ne "Type a number to remove: "
+    echo -ne "Remove: "
     read NUMBER
     sed -ie ${NUMBER}d $todofile
 
