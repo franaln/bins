@@ -12,7 +12,8 @@ if test $# = 0 ; then
     if test `cat $todofile | wc -l` = 0; then
 	exit 0
     else
-	echo "[todo]"
+	echo "todo"
+	echo "----"
 	echo
 	
 	cat $todofile | while read sample ; do
@@ -25,12 +26,15 @@ if test $# = 0 ; then
 # show usage
 elif test $1 = -h ; then
 
-    echo "[todo] Usage: todo <task to add>"
+    echo "todo"
+    echo "----"
+    echo
+    echo " Usage: todo <task to add>"
     echo "              todo [option]"
     echo
-    echo "       Options: -r  remove a task"
-    echo "                -c  clear all tasks"
-    echo "                -h  show usage"
+    echo " Options: -r  remove a task"
+    echo "          -c  clear all tasks"
+    echo "          -h  show usage"
     echo
 
          
