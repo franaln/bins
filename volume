@@ -59,26 +59,26 @@ muted=$(get_muted)   # Reads mute
 if [[ $1 == "increase" ]] ; then
     vol=$(($vol + 5))   
     if [[ $muted == "off" ]] ; then
-	amixer -q set $device toggle
+	    amixer -q set $device toggle
     fi
     if [[ $vol -ge 100 ]] ; then
         vol=100
     else 
-	increase_volume 5
+	    increase_volume 5
     fi
 elif [[ $1 == "decrease" ]] ; then
     vol=$(($vol - 5))
     if [[ $muted == "off" ]] ; then
-	amixer -q set $device toggle
+	    amixer -q set $device toggle
     fi
     if [[ $vol -le 0 ]]
     then
         vol=0        
     else
-	decrease_volume 5
+	    decrease_volume 5
     fi
 elif [[ $1 == "toggle" ]] ; then
-        amixer -q set $device toggle
+    amixer -q set $device toggle
 fi
 
 muted=$(get_muted)

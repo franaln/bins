@@ -40,12 +40,12 @@ function xdmenu()
 option=""
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-    launcheropts="apps\nexplore\nwindows\npower\nconfig\nscreen\nfind\ncalc"
+    launcheropts="apps\nexplore\npower\nscreen\nfind\ncalc\numount\nwindows"
     choice=$(echo -e $launcheropts | xdmenu "OLGAAA!")
     if [ "$choice" == "" ] ; then
-	exit 1
+	    exit 1
     else
-	option=$choice
+	    option=$choice
     fi
 
 # Else go to the correspondig option
@@ -56,161 +56,140 @@ fi
 
 # Different launcher options
 case "$option" in
-
+    
     ## Change window
     windows)
-	
-	win=`wmctrl -l | colrm 1 19 | sed '/tint2/d' | xdmenu "windows"`
-	
-	if [ "$win" == "" ] ; then
-	    exit
-	elif [ "$win" == "Desktop" ] ; then
-	    wmctrl -k on
-	else
-	    wmctrl -a $win
-	fi
-	;;
-
-
+	    
+	    win=`wmctrl -l | colrm 1 19 | sed '/tint2/d' | xdmenu "windows"`
+	    
+	    if [ "$win" == "" ] ; then
+	        exit
+	    elif [ "$win" == "Desktop" ] ; then
+	        wmctrl -k on
+	    else
+	        wmctrl -a $win
+	    fi
+	    ;;
+    
+    
     ## Power options
     power)
-	
-	poweropts="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate"
-
-	choice=$(echo -e $poweropts |  xdmenu "power")
-	
-	if [ "$choice" = "" ] ; then
-	    exit 1
-	elif [ "$choice" = "logout" ] ; then
-	    openbox --exit
-	elif [ "$choice" = "lock" ] ; then
-	    xscreensaver-command --lock
-	    exit 0
-	else
-	    systemctl $choice
-	    exit 0
-	fi
-	;;
-
+	    
+	    poweropts="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate"
+        
+	    choice=$(echo -e $poweropts |  xdmenu "power")
+	    
+	    if [ "$choice" = "" ] ; then
+	        exit 1
+	    elif [ "$choice" = "logout" ] ; then
+	        openbox --exit
+	    elif [ "$choice" = "lock" ] ; then
+	        xscreensaver-command --lock
+	        exit 0
+	    else
+	        systemctl $choice
+	        exit 0
+	    fi
+	    ;;
+    
     
     ## Open apps. Show recent apps first
     apps)
-	
-	max_recent=50 # Number of recent commands to track
-	recent_cache="$cachedir/apps_recent"
-	rest_cache="$cachedir/apps_all"
-
-	mkdir -p $cachedir
-	touch $recent_cache
-
-	IFS=:
-	if stest -dqr -n "$rest_cache" $PATH; then
-	    stest -flx $PATH | sort -u | grep -vf "$recent_cache" > "$rest_cache"
-	fi
-
-	IFS=" "
-	cmd=$(cat "$recent_cache" "$rest_cache" | xdmenu "apps") || exit
-
-	if ! grep -qx "$cmd" "$recent_cache" &> /dev/null; then
-	    grep -vx "$cmd" "$rest_cache" > "$rest_cache.$$"
-	    mv "$rest_cache.$$" "$rest_cache"
-	fi
-	echo "$cmd" > "$recent_cache.$$"
-	grep -vx "$cmd" "$recent_cache" | head -n "$max_recent" >> "$recent_cache.$$"
-	mv "$recent_cache.$$"  "$recent_cache"
-
-	($cmd  | ${SHELL:-"/bin/sh"} &)
-	;;
-
-
-    ## Edit config files
-    config)
-
-	configfiles="bashrc\nbash_alias\nbash_fns\nbash_vars\nrc.xml\nmenu.xml\nautostart\ntint2rc\nplotterrc"
-
-	cmd=$(echo -e $configfiles | xdmenu "config")
-
-	case ${cmd%% *} in
-	    bashrc)	  exec urxvt -e $EDITOR $HOME/dots/bashrc	                  ;;
-	    bash_alias)   exec urxvt -e $EDITOR $HOME/dots/bash_alias              ;;
-	    bash_fns)     exec urxvt -e $EDITOR $HOME/dots/bash_fns                ;;
-	    bash_vars)    exec urxvt -e $EDITOR $HOME/dots/bash_vars               ;;
-	    rc.xml)	  exec urxvt -e $EDITOR $HOME/dots/openbox/rc.xml	  ;;
-	    menu.xml)     exec urxvt -e $EDITOR $HOME/dots/openbox/menu.xml    ;;
-	    autostart)    exec urxvt -e $EDITOR $HOME/dots/openbox/autostart   ;;
-	    tint2rc)      exec urxvt -e $EDITOR $HOME/dots/tint2/tint2rc	  ;;
-	    plotterrc)    exec urxvt -e $EDITOR $HOME/.plotterrc          	  ;;
-	esac
-	;;
-
-
+	    
+	    max_recent=50 # Number of recent commands to track
+	    recent_cache="$cachedir/apps_recent"
+	    rest_cache="$cachedir/apps_all"
+        
+	    mkdir -p $cachedir
+	    touch $recent_cache
+        
+	    IFS=:
+	    if stest -dqr -n "$rest_cache" $PATH; then
+	        stest -flx $PATH | sort -u | grep -vf "$recent_cache" > "$rest_cache"
+	    fi
+        
+	    IFS=" "
+	    cmd=$(cat "$recent_cache" "$rest_cache" | xdmenu "apps") || exit
+        
+	    if ! grep -qx "$cmd" "$recent_cache" &> /dev/null; then
+	        grep -vx "$cmd" "$rest_cache" > "$rest_cache.$$"
+	        mv "$rest_cache.$$" "$rest_cache"
+	    fi
+	    echo "$cmd" > "$recent_cache.$$"
+	    grep -vx "$cmd" "$recent_cache" | head -n "$max_recent" >> "$recent_cache.$$"
+	    mv "$recent_cache.$$"  "$recent_cache"
+        
+	    ($cmd  | ${SHELL:-"/bin/sh"} &)
+	    ;;
+    
+    
     ## Calculator
     calc)
-	xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
-	;;
-
-
+	    xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
+	    ;;
+    
+    
     ## Search files
     find)
-	input=$(xsel -o | xdmenu "search")
-	result=""
-	if [ "$input" != '' ] ; then
-	    result=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
-	fi
-	
-	if [ "$result" != "" ] ; then
-	    exec $open "$result"
-	fi
-	;;
-
-
+	    input=$(xdmenu "search")
+	    result=""
+	    if [ "$input" != '' ] ; then
+	        result=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
+	    fi
+	    
+	    if [ "$result" != "" ] ; then
+	        exec $open "$result"
+	    fi
+	    ;;
+    
+    
     ## Screen/VGA/HDMI options
     screen)
-
-	devices=$(xrandr -q | grep [[:upper:]]1)
-
-	availableopts="Laptop only"
-
-	if [[ $devices == *"VGA1 connected"* ]] ; then
-	    availableopts+="\nVGA only\nLatop & VGA"
-	fi
+        
+	    devices=$(xrandr -q | grep [[:upper:]]1)
+        
+	    availableopts="Laptop only"
+        
+	    if [[ $devices == *"VGA1 connected"* ]] ; then
+	        availableopts+="\nVGA only\nLatop & VGA"
+	    fi
+	    
+	    if [[ $devices == *"HDMI1 connected"* ]] ; then
+	        availableopts+="\nHDMI only\nHDMI & Laptop"
+	    fi
+        
+	    choice=$(echo -e $availableopts | xdmenu "screens")
+        
+	    case "$choice" in
+	        "Laptop only")
+		        xrandr --output eDP1 --auto
+		        xrandr --output HDMI1 --off
+		        xrandr --output VGA1  --off
+		        ;;
+	        "VGA only")
+		        xrandr --output VGA1  --auto
+	    	    xrandr --output eDP1  --off
+		        xrandr --output HDMI1 --off
+		        ;;
+	        "HDMI only")
+		        xrandr --output HDMI1 --auto
+		        xrandr --output VGA1  --off
+	    	    xrandr --output eDP1  --off
+		        ;;
+	        "Laptop & VGA")
+	    	    xrandr --output eDP1  --auto
+		        xrandr --output VGA1  --auto
+		        xrandr --output HDMI1 --off
+		        ;;
+	        "Laptop & HDMI")
+	    	    xrandr --output eDP1  --auto
+		        xrandr --output HDMI1 --auto
+		        xrandr --output VGA1  --off
+		        ;;
+	    esac
+	    exit 0 
+	    ;;
 	
-	if [[ $devices == *"HDMI1 connected"* ]] ; then
-	    availableopts+="\nHDMI only\nHDMI & Laptop"
-	fi
-
-	choice=$(echo -e $availableopts | xdmenu "screens")
-
-	case "$choice" in
-	    "Laptop only")
-		xrandr --output eDP1 --auto
-		xrandr --output HDMI1 --off
-		xrandr --output VGA1  --off
-		;;
-	    "VGA only")
-		xrandr --output VGA1  --auto
-	    	xrandr --output eDP1  --off
-		xrandr --output HDMI1 --off
-		;;
-	    "HDMI only")
-		xrandr --output HDMI1 --auto
-		xrandr --output VGA1  --off
-	    	xrandr --output eDP1  --off
-		;;
-	    "Laptop & VGA")
-	    	xrandr --output eDP1  --auto
-		xrandr --output VGA1  --auto
-		xrandr --output HDMI1 --off
-		;;
-	    "Laptop & HDMI")
-	    	xrandr --output eDP1  --auto
-		xrandr --output HDMI1 --auto
-		xrandr --output VGA1  --off
-		;;
-	esac
-	exit 0 
-	;;
-	   
     # mount)
     
     #  	choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
@@ -220,13 +199,17 @@ case "$option" in
     # 	else
     # 	    sudo mount $choice /run 
     
-    # # Show options, get choice
-    # choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | $DMENU -p "Drive to umount:")
+    umount)
+        
+        choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | xdmenu "umount")
     
-    # if [[ $choice ]]; then
-    #         sudo umount $choice
-    # fi
-    #	fi
+        if [[ $choice ]]; then
+            sudo umount $choice
+        else
+            exit 0
+        fi
+        ;;
+
 
     # Explore files
     explore)
@@ -235,44 +218,44 @@ case "$option" in
 
 	choice=1
 	while [ "$choice" ]; do
-
+        
 	    choice=$((echo ".." ; ls $PWD ; echo "[Open]") | xdmenu ">$(basename $(pwd))")
-
+        
 	    if [ "$choice" ] ; then
-		
-		# change dir by hand
-		if [[ "$choice" == "cd "* ]] ; then
-		    goto=$(echo $choice | cut -d ' ' -f 2)
-
-		    if [ -d $goto ] ; then
-			cd $goto
-		    else
-			exit 1
-		    fi
-
-		# Folder -> go inside
-		elif [[ -d "$choice" ]] ; then
-		    cd "$choice"
 		    
-		# .. -> go up
-		elif [ "$choice" == ".." ] ; then
-		    cd ..
-
-		# [Open] -> open current dir in $fm
-		elif [ "$choice" == "[Open]" ] ; then
-		    echo $PWD
-		    $filemanager "$PWD"
-		    unset file
-		    exit 0
-		# File -> open
-		else
-		    exec $open $choice
-		    unset file
-		fi
+		    # change dir by hand
+		    if [[ "$choice" == "cd "* ]] ; then
+		        goto=$(echo $choice | cut -d ' ' -f 2)
+                
+		        if [ -d $goto ] ; then
+			        cd $goto
+		        else
+			        exit 1
+		        fi
+                
+		        # Folder -> go inside
+		    elif [[ -d "$choice" ]] ; then
+		        cd "$choice"
+		        
+		        # .. -> go up
+		    elif [ "$choice" == ".." ] ; then
+		        cd ..
+                
+		        # [Open] -> open current dir in $fm
+		    elif [ "$choice" == "[Open]" ] ; then
+		        echo $PWD
+		        $filemanager "$PWD"
+		        unset file
+		        exit 0
+		        # File -> open
+		    else
+		        exec $open $choice
+		        unset file
+		    fi
 	    fi
 	done
 	;;
-
+    
 esac
 
 
