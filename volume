@@ -16,8 +16,12 @@ bar_width="180"       # width of volume bar
 bar_height="7"        # width of volume bar
 
 device="Master"
+
 stringtogrep="Mono: P"
-#stringtogrep="Front Left: P"
+try=$(amixer get $device | grep $stringtogrep)
+if [ ! $try ] ; then
+    stringtogrep="Front Left: P"
+fi
 
 pipe="/tmp/volumepipe"
 
