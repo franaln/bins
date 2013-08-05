@@ -13,7 +13,7 @@ fi
 folder=$1
 name=$2
 
-dropboxbackup=/home/fran/Dropbox/Backup
+dropboxbackup=/home/fran/Dropbox/Backups
 
 echo ":: Creating backup for "$folder" with name "$name" ..."
 

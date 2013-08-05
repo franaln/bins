@@ -19,7 +19,7 @@ height=28
 # olgaaa config
 cachedir="$HOME/.cache/olgaaa"
 open="ow"
-filemanager=dolphin
+fm="dolphin"
 
 
 # Center dmenu in the screen
@@ -244,7 +244,7 @@ case "$option" in
 		        # [Open] -> open current dir in $fm
 		    elif [ "$choice" == "[Open]" ] ; then
 		        echo $PWD
-		        $filemanager "$PWD"
+		        setsid setsid $fm "$PWD"
 		        unset file
 		        exit 0
 		        # File -> open
