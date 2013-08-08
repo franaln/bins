@@ -10,17 +10,17 @@ bg="#101010"          # background colour of window
 fg="#dedede"          # foreground colour of text
 bar_fg="#606060"      # foreground colour of volume bar
 bar_bg="#404040"      # background colour of volume bar
-height="25"           # window height
-width="200"           # window width
-bar_width="180"       # width of volume bar
-bar_height="7"        # width of volume bar
+height="40"           # window height
+width="300"           # window width
+bar_width="250"       # width of volume bar
+bar_height="10"       # width of volume bar
 
 device="Master"
 
-stringtogrep="Mono: P"
-try=$(amixer get $device | grep $stringtogrep)
+to_grep="Mono: P"
+try=$(amixer get $device | grep $to_grep)
 if [ ! $try ] ; then
-    stringtogrep="Front Left: P"
+    to_grep="Front Left: P"
 fi
 
 pipe="/tmp/volumepipe"
@@ -31,6 +31,8 @@ xres=`echo $dimensions | cut -dx -f1`
 yres=`echo $dimensions | cut -dx -f2`
 xpos=$[$xres / 2 - $width / 2]       
 ypos=$[$yres * 2 / 3 - $height / 2] 
+# xpos=$[$xres - $width - 10]       
+# ypos=$[$height + 20] 
 
 # Increase/drecrease volume
 function increase_volume()
@@ -46,14 +48,14 @@ function decrease_volume()
 # Gets the current volume
 function get_volume()
 {
-    curvol=$(amixer get $device | grep "$stringtogrep" | cut -d '[' -f 2 | cut -d '%' -f 1)
+    curvol=$(amixer get $device | grep "$to_grep" | cut -d '[' -f 2 | cut -d '%' -f 1)
     echo $curvol
 }
 
 # Get mute state
 function get_muted()
 {
-    ismuted=$(amixer get $device | grep "$stringtogrep" | awk '{print $6}' | sed -e 's:\[::' | sed -e 's:\]::')
+    ismuted=$(amixer get $device | grep "$to_grep" | awk '{print $6}' | sed -e 's:\[::' | sed -e 's:\]::')
     echo $ismuted
 }
 
@@ -61,22 +63,28 @@ vol=$(get_volume)    # Reads volume
 muted=$(get_muted)   # Reads mute
 
 if [[ $1 == "increase" ]] ; then
-    vol=$(($vol + 5))   
+
     if [[ $muted == "off" ]] ; then
 	    amixer -q set $device toggle
     fi
-    if [[ $vol -ge 100 ]] ; then
+    
+    vol=$(($vol + 5))   
+    if [[ $vol -gt 100 ]] ; then
+        increase_volume $((100 - $vol + 5))
         vol=100
     else 
 	    increase_volume 5
     fi
+
 elif [[ $1 == "decrease" ]] ; then
-    vol=$(($vol - 5))
     if [[ $muted == "off" ]] ; then
 	    amixer -q set $device toggle
     fi
+
+    vol=$(($vol - 5))
     if [[ $vol -le 0 ]]
     then
+        decrease_volume $(($vol + 5))
         vol=0        
     else
 	    decrease_volume 5
