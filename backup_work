@@ -1,12 +1,18 @@
 #! /bin/bash
 
 # Backup work directory
+
+
+# 1: 
 # Create work_YYYY_DDMM.tar.gz in the Backups folder
 
 
 # Folders
-work_folder=/home/fran/work/*
-backup_folder=/home/fran/Backups
+work_dir=$HOME/work/*
+bckp_dir=$HOME/Backups
+dbox_dir=$HOME/Dropbox/Backups
+snap_dir=$HOME/Backups/Snap
+
 
 
 # Create backup

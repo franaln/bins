@@ -11,10 +11,11 @@
 # dmenu config
 font=Segoe-12
 sf_color=#dedede
-sb_color=#534eb4
+sb_color=#4e63b4
 nf_color=#dedede
 nb_color=#2a2a2a
 height=28
+lines=10
 
 # olgaaa config
 cachedir="$HOME/.cache/olgaaa"
@@ -30,10 +31,10 @@ yres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f2`
 ypos=$[$yres / 2 - $height / 2]       
 
 
-# Execute dmenu with the specific options. Takes the prompt as an option
+# Execute dmenu with the specific options. Takes the prompt text as an option
 function xdmenu()
 {
-    dmenu -i -l 10 -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
+    dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
 }
 
 
@@ -41,7 +42,7 @@ option=""
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
     launcheropts="apps\nexplore\npower\nscreen\nfind\ncalc\numount\nwindows"
-    choice=$(echo -e $launcheropts | xdmenu "OLGAAA!")
+    choice=$(echo -e $launcheropts | xdmenu "olgaaa")
     if [ "$choice" == "" ] ; then
 	    exit 1
     else
@@ -57,7 +58,7 @@ fi
 # Different launcher options
 case "$option" in
     
-    ## Change window
+    ## Change to another window
     windows)
 	    
 	    win=`wmctrl -l | colrm 1 19 | sed '/tint2/d' | xdmenu "windows"`
@@ -71,7 +72,6 @@ case "$option" in
 	    fi
 	    ;;
     
-    
     ## Power options
     power)
 	    
@@ -84,14 +84,13 @@ case "$option" in
 	    elif [ "$choice" = "logout" ] ; then
 	        openbox --exit
 	    elif [ "$choice" = "lock" ] ; then
-	        xscreensaver-command --lock
+	        slimlock
 	        exit 0
 	    else
 	        systemctl $choice
 	        exit 0
 	    fi
 	    ;;
-    
     
     ## Open apps. Show recent apps first
     apps)
@@ -122,12 +121,10 @@ case "$option" in
 	    ($cmd  | ${SHELL:-"/bin/sh"} &)
 	    ;;
     
-    
     ## Calculator
     calc)
 	    xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
 	    ;;
-    
     
     ## Search files
     find)
@@ -141,7 +138,6 @@ case "$option" in
 	        exec $open "$result"
 	    fi
 	    ;;
-    
     
     ## Screen/VGA/HDMI options
     screen)
@@ -199,6 +195,27 @@ case "$option" in
     # 	else
     # 	    sudo mount $choice /run 
     
+    # # $1 = msg
+    # dmenu_notify() {
+    #     : | dmenu -p "$1 (press enter)"
+    # }
+    
+    # if [[ $EUID != 0 ]]; then 
+    #     dmenu_notify "Please run it as root"
+    #     exit 1
+    # fi
+    
+    # usb="$(awk '/ \/usb\// {print $2}' /etc/mtab | cut -d / -f 3 | dmenu -p "Select USB to remove")"
+    # if [[ "$usb" == "" || ! -d "/usb/$usb" ]]; then
+    #     exit 1
+    # fi
+    
+    # if umount "/usb/$usb"; then
+    #     dmenu_notify "You can now safely remove $usb"
+    # else
+    #     dmenu_notify "Some apps are using $usb"
+    # fi
+    
     umount)
         
         choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | xdmenu "umount")
@@ -214,47 +231,47 @@ case "$option" in
     # Explore files
     explore)
 	
-	cd "$HOME"
+	    cd "$HOME"
 
-	choice=1
-	while [ "$choice" ]; do
+	    choice=1
+	    while [ "$choice" ]; do
+            
+	        choice=$((echo ".." ; ls $PWD ; echo "[Open]") | xdmenu "[$(basename $(pwd))]")
         
-	    choice=$((echo ".." ; ls $PWD ; echo "[Open]") | xdmenu ">$(basename $(pwd))")
-        
-	    if [ "$choice" ] ; then
-		    
-		    # change dir by hand
-		    if [[ "$choice" == "cd "* ]] ; then
-		        goto=$(echo $choice | cut -d ' ' -f 2)
-                
-		        if [ -d $goto ] ; then
-			        cd $goto
-		        else
-			        exit 1
-		        fi
-                
-		        # Folder -> go inside
-		    elif [[ -d "$choice" ]] ; then
-		        cd "$choice"
+	        if [ "$choice" ] ; then
 		        
+		        # change dir by hand
+		        if [[ "$choice" == "cd "* ]] ; then
+		            goto=$(echo $choice | cut -d ' ' -f 2)
+                    
+		            if [ -d $goto ] ; then
+			            cd $goto
+		            else
+			            exit 1
+		            fi
+                    
+		        # Folder -> go inside
+		        elif [[ -d "$choice" ]] ; then
+		            cd "$choice"
+		            
 		        # .. -> go up
-		    elif [ "$choice" == ".." ] ; then
-		        cd ..
-                
+		        elif [ "$choice" == ".." ] ; then
+		            cd ..
+                    
 		        # [Open] -> open current dir in $fm
-		    elif [ "$choice" == "[Open]" ] ; then
-		        echo $PWD
-		        setsid setsid $fm "$PWD"
-		        unset file
-		        exit 0
-		        # File -> open
-		    else
-		        exec $open $choice
-		        unset file
-		    fi
-	    fi
-	done
-	;;
+		        elif [ "$choice" == "[Open]" ] ; then
+		            setsid $fm "$PWD"
+		            unset file
+		            exit 0
+		        
+                # File -> open
+		        else
+		            exec $open $choice
+		            unset file
+		        fi
+	        fi
+	    done
+	    ;;
     
 esac
 

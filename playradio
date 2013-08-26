@@ -2,6 +2,7 @@
 # play radio metro :)
 
 url=mms://201.212.5.144/metro
+#url=mms://201.212.5.144/audio959-rockandpop
 
 while :
 do
