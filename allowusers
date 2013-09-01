@@ -1,0 +1,11 @@
+#! /usr/bin/env bash
+
+# screen brightness
+screen_path="/sys/class/backlight/intel_backlight/brightness"
+sudo chgrp users ${screen_path}
+sudo chmod g+w ${screen_path}
+
+# kbd brightness
+kbd_path="/sys/class/leds/asus::kbd_backlight/brightness"
+sudo chgrp users ${kbd_path}
+sudo chmod g+w ${kbd_path}
