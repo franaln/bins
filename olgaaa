@@ -2,11 +2,10 @@
 
 # Olgaaa  -  "One menu to rule them all"
 #
-# Usage: olgaaa [option]    
+# Usage: olgaaa [option] or olgaaa    
 # Options available: apps, windows, power, calc, config, home, find, screen. If not option is provide, it will show the options availables.
-# Maybe is a good idea to assign a keybind for each option
 #
-# Needs dmenu patched with the qxyw patch
+# *Needs dmenu patched with the qxyw patch*
 
 # dmenu config
 font=Segoe-12
@@ -19,8 +18,10 @@ lines=10
 
 # olgaaa config
 cachedir="$HOME/.cache/olgaaa"
-open="ow"
-fm="dolphin"
+open=ow
+filemanager=dolphin
+console=urxvtdc
+browser=chromium
 
 
 # Center dmenu in the screen
@@ -32,16 +33,16 @@ ypos=$[$yres / 2 - $height / 2]
 
 
 # Execute dmenu with the specific options. Takes the prompt text as an option
-function xdmenu()
+xdmenu()
 {
     dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
 }
 
-
 option=""
+
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-    launcheropts="apps\nexplore\npower\nscreen\nfind\ncalc\numount\nwindows"
+    launcheropts="apps\ngoogle\nexplore\npower\nscreen\nsearch\ncalc\numount\nwindows"
     choice=$(echo -e $launcheropts | xdmenu "olgaaa")
     if [ "$choice" == "" ] ; then
 	    exit 1
@@ -53,6 +54,8 @@ if [ $# -eq 0 ] ; then
 else
     option=$1
 fi
+
+
 
 
 # Different launcher options
@@ -123,22 +126,28 @@ case "$option" in
     
     ## Calculator
     calc)
-	    xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
+        xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
 	    ;;
     
     ## Search files
-    find)
-	    input=$(xdmenu "search")
+    search)
+        input=$(xdmenu "search")
+
 	    result=""
 	    if [ "$input" != '' ] ; then
 	        result=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
-	    fi
+	    else
+            return 1
+        fi
 	    
 	    if [ "$result" != "" ] ; then
-	        exec $open "$result"
-	    fi
-	    ;;
-    
+	        $open "$result"
+        else
+            
+	        return 1
+        fi
+        ;;
+
     ## Screen/VGA/HDMI options
     screen)
         
@@ -159,16 +168,19 @@ case "$option" in
 	    case "$choice" in
 	        "Laptop only")
 		        xrandr --output eDP1 --auto
+                sleep 2
 		        xrandr --output HDMI1 --off
 		        xrandr --output VGA1  --off
 		        ;;
 	        "VGA only")
 		        xrandr --output VGA1  --auto
+                sleep 2
 	    	    xrandr --output eDP1  --off
 		        xrandr --output HDMI1 --off
 		        ;;
 	        "HDMI only")
 		        xrandr --output HDMI1 --auto
+                sleep 2
 		        xrandr --output VGA1  --off
 	    	    xrandr --output eDP1  --off
 		        ;;
@@ -260,20 +272,39 @@ case "$option" in
                     
 		        # [Open] -> open current dir in $fm
 		        elif [ "$choice" == "[Open]" ] ; then
-		            setsid $fm "$PWD"
+		            setsid $filemanager "$PWD"
 		            unset file
 		            exit 0
 		        
                 # File -> open
 		        else
-		            exec $open $choice
+		            $open $choice
 		            unset file
 		        fi
 	        fi
 	    done
 	    ;;
-    
+
+    cmd)
+        cmd_to_execute=$(xdmenu "cmd")
+        setsid "$console -e $cmd_to_execute"
+        ;;
+
+
+    google)
+        
+        GS=$(xdmenu "google")
+        
+        if [ "$GS" != "" ] ; then
+            $browser  http://www.google.com.ar/search?q="$GS"
+            wmctrl -a $browser
+        else
+            return 0
+        fi
+        ;;
+
 esac
+
 
 
 
