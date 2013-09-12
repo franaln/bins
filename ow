@@ -2,7 +2,7 @@
 #usage: ow filename
 
 #source
-if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc)$ ]]; then
+if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]]; then
     open="$EDITOR"
  
 #archive 

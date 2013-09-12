@@ -35,15 +35,15 @@ ypos=$[$yres / 2 - $height*$lines / 2]
 # Execute dmenu with the specific options. Takes the prompt text as an option
 xdmenu()
 { 
-    dmenu -i -l "$lines" -o 0.9 -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
+    dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
 }
 
 option=""
 
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-    opts="apps\ngoogle\nexplore\npower\nscreen\nsearch\ncalc\numount\nwindows"
-    choice=$(echo -e $opts | xdmenu "olgaaa")
+    opts=("apps" "google" "explore" "power" "screen" "search" "calc")
+    choice=$(printf "%s\n" "${opts[@]}" | xdmenu "olgaaa")
     if [ "$choice" == "" ] ; then
 	    exit 1
     else
@@ -56,44 +56,8 @@ else
 fi
 
 
-
-
 # Different launcher options
 case "$option" in
-    
-    ## Change to another window
-    windows)
-	    
-	    win=`wmctrl -l | colrm 1 19 | sed '/tint2/d' | xdmenu "windows"`
-	    
-	    if [ "$win" == "" ] ; then
-	        exit
-	    elif [ "$win" == "Desktop" ] ; then
-	        wmctrl -k on
-	    else
-	        wmctrl -a $win
-	    fi
-	    ;;
-    
-    ## Power options
-    power)
-	    
-	    poweropts="lock\nlogout\nsuspend\npoweroff\nreboot\nhibernate"
-        
-	    choice=$(echo -e $poweropts |  xdmenu "power")
-	    
-	    if [ "$choice" = "" ] ; then
-	        exit 1
-	    elif [ "$choice" = "logout" ] ; then
-	        openbox --exit
-	    elif [ "$choice" = "lock" ] ; then
-	        slimlock
-	        exit 0
-	    else
-	        systemctl $choice
-	        exit 0
-	    fi
-	    ;;
     
     ## Open apps. Show recent apps first
     apps)
@@ -123,10 +87,39 @@ case "$option" in
         
 	    ($cmd  | ${SHELL:-"/bin/sh"} &)
 	    ;;
+
+    
+    ## Power options
+    power)
+	    
+	    power_opts=("lock" "logout" "suspend" "poweroff" "reboot" "hibernate")
+        
+	    choice=$(printf "%s\n" "${power_opts[@]}" |  xdmenu "power")
+	    
+	    if [ "$choice" = "" ] ; then
+	        exit 1
+	    elif [ "$choice" = "logout" ] ; then
+	        openbox --exit
+	    elif [ "$choice" = "lock" ] ; then
+	        slimlock
+	        exit 0
+	    else
+	        systemctl $choice
+	        exit 0
+	    fi
+	    ;;
+    
     
     ## Calculator
     calc)
-        xsel -o | xdmenu "calc" | xargs echo | calc | sed "s/\t//g" | xdmenu "result" | xsel -i
+        result=$(xdmenu "calc" | xargs echo | calc | sed "s/\t//g")
+
+        if [ "$result" != "" ] ; then
+            echo $result | xdmenu "result"
+            exit 0
+        else
+            exit 1
+        fi
 	    ;;
     
     ## Search files
@@ -143,8 +136,7 @@ case "$option" in
 	    if [ "$result" != "" ] ; then
 	        $open "$result"
         else
-            
-	        return 1
+          	return 1
         fi
         ;;
 
@@ -233,12 +225,11 @@ case "$option" in
         choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | xdmenu "umount")
     
         if [[ $choice ]]; then
-            sudo umount $choice
+            sudo umount $choice | zenity
         else
             exit 0
         fi
         ;;
-
 
     # Explore files
     explore)
@@ -286,12 +277,15 @@ case "$option" in
 	    done
 	    ;;
 
-    cmd)
-        cmd_to_execute=$(xdmenu "cmd")
-        setsid "$console -e $cmd_to_execute"
-        ;;
+    
+    # Execute command
+    # cmd)
+    #     cmd_to_execute=$(xdmenu "cmd")
+    #     setsid "$console -e $cmd_to_execute"
+    #     ;;
 
 
+    # Search in google
     google)
         
         GS=$(xdmenu "google")
