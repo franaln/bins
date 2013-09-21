@@ -23,7 +23,6 @@ filemanager=dolphin
 console=urxvtdc
 browser=chromium
 
-
 # Center dmenu in the screen
 xres=`xdpyinfo | grep 'dimensions:' | awk '{print $2}' | cut -dx -f1`
 width=$[$xres / 4]
@@ -190,46 +189,6 @@ case "$option" in
 	    exit 0 
 	    ;;
 	
-    # mount)
-    
-    #  	choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
-    
-    # 	if [[ $choice == "" ]] ; then
-    # 	    exit 1
-    # 	else
-    # 	    sudo mount $choice /run 
-    
-    # # $1 = msg
-    # dmenu_notify() {
-    #     : | dmenu -p "$1 (press enter)"
-    # }
-    
-    # if [[ $EUID != 0 ]]; then 
-    #     dmenu_notify "Please run it as root"
-    #     exit 1
-    # fi
-    
-    # usb="$(awk '/ \/usb\// {print $2}' /etc/mtab | cut -d / -f 3 | dmenu -p "Select USB to remove")"
-    # if [[ "$usb" == "" || ! -d "/usb/$usb" ]]; then
-    #     exit 1
-    # fi
-    
-    # if umount "/usb/$usb"; then
-    #     dmenu_notify "You can now safely remove $usb"
-    # else
-    #     dmenu_notify "Some apps are using $usb"
-    # fi
-    
-    umount)
-        
-        choice=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | xdmenu "umount")
-    
-        if [[ $choice ]]; then
-            sudo umount $choice | zenity
-        else
-            exit 0
-        fi
-        ;;
 
     # Explore files
     explore)
@@ -278,13 +237,6 @@ case "$option" in
 	    ;;
 
     
-    # Execute command
-    # cmd)
-    #     cmd_to_execute=$(xdmenu "cmd")
-    #     setsid "$console -e $cmd_to_execute"
-    #     ;;
-
-
     # Search in google
     google)
         
@@ -297,6 +249,34 @@ case "$option" in
             return 0
         fi
         ;;
+
+    # mount)
+        
+    #     choice=$(cat /proc/partitions | grep -o sd[[:alpha:]] | grep -v major | grep -v "sda" | xdmenu "mount")
+    
+    # 	if [[ $choice == "" ]] ; then
+    # 	    exit 1
+    # 	else
+    #         mkdir -p /media/$choice
+    # 	    mount -U 1000 $choice /media/$choice 
+    #     fi
+    #     ;;    
+
+    # umount)
+        
+    #     usb=$(mount | awk '$3 ~ /\/media\// || /\/mnt\// { print $3 }' | xdmenu "umount")
+    
+    #     if [[ "$usb" == "" || ! -d "$usb" ]]; then
+    #         exit 1
+    #     fi
+    
+    #     if umount "$usb"; then
+    #         notify-send "You can now safely remove $usb"
+    #     else
+    #         notify-send "Some apps are using $usb"
+    #     fi
+    #     exit 0
+    #     ;;
 
 esac
 
