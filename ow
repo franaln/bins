@@ -1,45 +1,52 @@
 #! /bin/bash
-#usage: ow filename
+# open file with the correponding app. if not file is passed, open current dir with emacs.
+# usage: ow filename
+
+if [ $# -eq 0 ] ; then
+    $EDITOR .
+    exit 0
+fi
 
 #source
 if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]]; then
-    open="$EDITOR"
+    app="$EDITOR"
  
 #archive 
 elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]]; then
-    open="ark"
+    app="ark"
 
 #video 
 elif [[ $1 =~ \.(mkv|mpe?g|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
-    open="mplayer"
+    app="mplayer"
 
 #audio 
 elif [[ $1 =~ \.(mp3|wav|ogg)$ ]]; then
-    open="mplayer"
+    app="mplayer"
 
 #torrent 
 elif [[ $1 =~ \.torrent ]]; then
-    open="ktorrent"
+    app="ktorrent"
 
 #pdf     
-elif [[ $1 =~ \.(pdf|ps|eps|djvu)$ ]]; then
-    open="okular"
+elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
+    app="okular"
+
+#eps
+elif [[ $1 =~ \.(eps)$ ]]; then
+    app="display"
 
 #image 
 elif [[ $1 =~ \.(jpe?g|png|gif|tiff|bmp|icon)$ ]]; then
-    open="sxiv"
+    app="sxiv"
 
 #html     
 elif [[ $1 =~ \.(html?|swf)$ ]]; then
-    open="chromium"
-
-#windows 
-elif [[ $1 =~ \.exe$ ]]; then
-    open="wine"
-
-#regular file
-else
-    open="$EDITOR"
+    app="chromium"
 fi
 
-setsid setsid $open $1
+[[ "$app" -eq "$EDITOR" ]] && $EDITOR $1 && exit 0
+
+while [[ $1 ]] ; do
+    setsid setsid $app $1
+    shift
+done

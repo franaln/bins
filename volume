@@ -1,0 +1,81 @@
+#!/bin/bash
+# Usage: volume [up|down|toggle]
+
+if [ $# -lt 1 ] ; then
+    exit 0
+fi
+device="Master"
+
+to_grep="Mono: P"
+try=$(amixer get $device | grep "$to_grep")
+if [ ! $try ] ; then
+    to_grep="Front Left: P"
+fi
+
+# Increase/drecrease volume
+function increase_volume()
+{
+    amixer -q set $device $1%+
+}
+
+function decrease_volume()
+{
+    amixer -q set $device $1%-
+}
+
+# Gets the current volume
+function get_volume()
+{
+    curvol=$(amixer get $device | grep "$to_grep" | cut -d '[' -f 2 | cut -d '%' -f 1)
+    echo $curvol
+}
+
+# Get mute state
+function get_muted()
+{
+    ismuted=$(amixer get $device | grep "$to_grep" | awk '{print $6}' | sed -e 's:\[::' | sed -e 's:\]::')
+    echo $ismuted
+}
+
+vol=$(get_volume)    # Reads volume
+muted=$(get_muted)   # Reads mute
+
+if [[ $1 == "up" ]] ; then
+
+    if [[ $muted == "off" ]] ; then
+	    amixer -q set $device toggle
+    fi
+    
+    vol=$(($vol + 5))   
+    if [[ $vol -gt 100 ]] ; then
+        increase_volume $((100 - $vol + 5))
+        vol=100
+    else 
+	    increase_volume 5
+    fi
+
+elif [[ $1 == "down" ]] ; then
+    if [[ $muted == "off" ]] ; then
+	    amixer -q set $device toggle
+    fi
+
+    vol=$(($vol - 5))
+    if [[ $vol -le 0 ]]
+    then
+        decrease_volume $(($vol + 5))
+        vol=0        
+    else
+	    decrease_volume 5
+    fi
+elif [[ $1 == "toggle" ]] ; then
+    amixer -q set $device toggle
+fi
+
+muted=$(get_muted)
+
+if [[ $muted == "off" ]] ; then
+    osdify -p $vol -a
+else
+    osdify -p $vol
+fi
+
