@@ -2,8 +2,10 @@
 # Usage: volume [up|down|toggle]
 
 if [ $# -lt 1 ] ; then
-    exit 0
+    echo "usage: volume [up|down|toggle]"
+    exit 1
 fi
+
 device="Master"
 
 to_grep="Mono: P"

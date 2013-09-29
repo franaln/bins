@@ -1,11 +1,25 @@
 #! /usr/bin/env bash
 
-# screen brightness
-screen_path="/sys/class/backlight/intel_backlight/brightness"
-sudo chgrp users ${screen_path}
-sudo chmod g+w ${screen_path}
 
-# kbd brightness
+screen_path="/sys/class/backlight/intel_backlight/brightness"
 kbd_path="/sys/class/leds/asus::kbd_backlight/brightness"
-sudo chgrp users ${kbd_path}
-sudo chmod g+w ${kbd_path}
+
+
+if [ $# -lt 1 ] ; then
+
+    sudo chgrp users ${screen_path}
+    sudo chmod g+w ${screen_path}
+
+    sudo chgrp users ${kbd_path}
+    sudo chmod g+w ${kbd_path}
+
+elif [[ $1 == "stop" ]] ; then
+
+    sudo chgrp root ${screen_path}
+    sudo chmod g-w ${screen_path}
+
+    sudo chgrp root ${kbd_path}
+    sudo chmod g-w ${kbd_path}
+
+fi
+
