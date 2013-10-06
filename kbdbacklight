@@ -31,7 +31,7 @@ def main():
     max_value = get_max_brightness()
     
     if len(sys.argv) < 2:
-        print("usage: volume [up|down]")
+        print("usage: kbdbacklight [up|down]")
         exit(1)
 
     

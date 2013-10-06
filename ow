@@ -44,7 +44,7 @@ elif [[ $1 =~ \.(html?|swf)$ ]]; then
     app="chromium"
 fi
 
-[[ "$app" -eq "$EDITOR" ]] && $EDITOR $1 && exit 0
+[[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
 
 while [[ $1 ]] ; do
     setsid setsid $app $1
