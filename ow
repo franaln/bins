@@ -32,11 +32,11 @@ elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
     app="okular"
 
 #eps
-elif [[ $1 =~ \.(eps)$ ]]; then
+elif [[ $1 =~ \.(eps|png)$ ]]; then
     app="display"
 
 #image 
-elif [[ $1 =~ \.(jpe?g|png|gif|tiff|bmp|icon)$ ]]; then
+elif [[ $1 =~ \.(jpe?g|gif|tiff|bmp|icon)$ ]]; then
     app="sxiv"
 
 #html     

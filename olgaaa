@@ -3,7 +3,6 @@
 # Olgaaa  -  "One menu to rule them all"
 #
 # Usage: olgaaa [option] or olgaaa    
-# Options available: apps, windows, power, calc, config, home, find, screen. If not option is provide, it will show the options availables.
 #
 # *Needs dmenu patched with the qxyw patch*
 
@@ -41,7 +40,12 @@ option=""
 
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
+
+    # if [[ `xsel -o` != "" ]] ; then
+    #     opts=("google" "search" "calc" "apps" "explore" "power" "screen")
+    # else
     opts=("apps" "google" "explore" "power" "screen" "search" "calc")
+    #fi
     choice=$(printf "%s\n" "${opts[@]}" | xdmenu "olgaaa")
     if [ "$choice" == "" ] ; then
 	    exit 1
@@ -240,7 +244,7 @@ case "$option" in
     # Search in google
     google)
         
-        GS=$(xdmenu "google")
+        GS=$(xsel -o | xdmenu "google")
         
         if [ "$GS" != "" ] ; then
             $browser  http://www.google.com.ar/search?q="$GS"
@@ -279,7 +283,5 @@ case "$option" in
     #     ;;
 
 esac
-
-
 
 
