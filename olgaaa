@@ -40,12 +40,8 @@ option=""
 
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-
-    # if [[ `xsel -o` != "" ]] ; then
-    #     opts=("google" "search" "calc" "apps" "explore" "power" "screen")
-    # else
     opts=("apps" "google" "explore" "power" "screen" "search" "calc")
-    #fi
+
     choice=$(printf "%s\n" "${opts[@]}" | xdmenu "olgaaa")
     if [ "$choice" == "" ] ; then
 	    exit 1
@@ -64,7 +60,6 @@ case "$option" in
     
     ## Open apps. Show recent apps first
     apps)
-	    
 	    max_recent=50 # Number of recent commands to track
 	    recent_cache="$cachedir/apps_recent"
 	    rest_cache="$cachedir/apps_all"
@@ -94,7 +89,6 @@ case "$option" in
     
     ## Power options
     power)
-	    
 	    power_opts=("lock" "logout" "suspend" "poweroff" "reboot" "hibernate")
         
 	    choice=$(printf "%s\n" "${power_opts[@]}" |  xdmenu "power")
@@ -163,13 +157,11 @@ case "$option" in
 	    case "$choice" in
 	        "Laptop only")
 		        xrandr --output eDP1 --auto
-                sleep 2
 		        xrandr --output HDMI1 --off
 		        xrandr --output VGA1  --off
 		        ;;
 	        "VGA only")
 		        xrandr --output VGA1  --auto
-                sleep 2
 	    	    xrandr --output eDP1  --off
 		        xrandr --output HDMI1 --off
 		        ;;
