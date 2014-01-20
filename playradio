@@ -6,18 +6,20 @@ url=mms://201.212.5.144/metro
 
 while :
 do
-    notify-send "Playing Metro 95.3 :)"
-    mplayer $url -cache 100 #-dumpstream -dumpfile recital_muse.asf
-    sleep 5
+    notify-send "Playing Metro 95.1"
+    mplayer $url -cache 1000
+    #-dumpstream -dumpfile recital_muse.asf
+    sleep 2
 done
 
 
-# create pipe
-mkfifo nombre
+# TMPFILE="metro"
 
-# read stream from pipe and send it to file and mplayer
-cat nombre | tee -a -i video.asf | mplayer - &
+# # create pipe
+# mkfifo $TMPFILE
 
-# send data to pipe
-mplayer $url -dumpstream -dumpfile nombre
+# # read stream from pipe and send it to file and mplayer
+# cat $TMPFILE | tee -a -i video.asf | mplayer - &
 
+# # send data to pipe
+# mplayer $url -dumpstream -dumpfile $TMPFILE

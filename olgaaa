@@ -84,7 +84,7 @@ case "$option" in
         grep -vx "$cmd" "$recent_cache" | head -n "$max_recent" >> "$recent_cache.$$"
         mv "$recent_cache.$$"  "$recent_cache"
 
-        ($cmd  | ${SHELL:-"/bin/sh"} &)
+        ($cmd | ${SHELL:-"/bin/sh"} &)
         ;;
 
 
@@ -148,11 +148,11 @@ case "$option" in
         availableopts="Laptop only"
 
         if [[ $devices == *"VGA1 connected"* ]] ; then
-            availableopts+="\nVGA only\nLatop & VGA"
+            availableopts+="\nVGA only\nLaptop and VGA"
         fi
 
         if [[ $devices == *"HDMI1 connected"* ]] ; then
-            availableopts+="\nHDMI only\nHDMI & Laptop"
+            availableopts+="\nHDMI only\nLaptop and HDMI"
         fi
 
         choice=$(echo -e $availableopts | xdmenu "screens")
@@ -170,16 +170,14 @@ case "$option" in
                 ;;
             "HDMI only")
                 xrandr --output HDMI1 --auto
-                sleep 2
                 xrandr --output VGA1  --off
                 xrandr --output eDP1  --off
                 ;;
-            "Laptop & VGA")
-                xrandr --output eDP1  --auto
-                xrandr --output VGA1  --auto
+            "Laptop and VGA")
+                xrandr --output VGA1 --auto --primary --output eDP1 --auto --right-of VGA1
                 xrandr --output HDMI1 --off
                 ;;
-            "Laptop & HDMI")
+            "Laptop and HDMI")
                 xrandr --output eDP1  --auto
                 xrandr --output HDMI1 --auto
                 xrandr --output VGA1  --off

@@ -1,3 +1,3 @@
 #! /usr/bin/env bash
 
-sudo systemctl restart NetworkManager
+sudo systemctl restart NetworkManager.service
