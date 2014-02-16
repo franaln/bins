@@ -10,24 +10,24 @@ fi
 #source
 if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]]; then
     app="$EDITOR"
- 
-#archive 
+
+#archive
 elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]]; then
-    app="ark"
+    app="file-roller"
 
-#video 
-elif [[ $1 =~ \.(mkv|mpe?g|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
-    app="mplayer"
+#video
+elif [[ $1 =~ \.(mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
+    app="mpv"
 
-#audio 
+#audio
 elif [[ $1 =~ \.(mp3|wav|ogg)$ ]]; then
-    app="mplayer"
+    app="mpv"
 
-#torrent 
+#torrent
 elif [[ $1 =~ \.torrent ]]; then
-    app="ktorrent"
+    app="transmission-gtk"
 
-#pdf     
+#pdf
 elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
     app="okular"
 
@@ -35,11 +35,11 @@ elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
 elif [[ $1 =~ \.(eps|png)$ ]]; then
     app="display"
 
-#image 
+#image
 elif [[ $1 =~ \.(jpe?g|gif|tiff|bmp|icon)$ ]]; then
     app="sxiv"
 
-#html     
+#html
 elif [[ $1 =~ \.(html?|swf)$ ]]; then
     app="chromium"
 fi
