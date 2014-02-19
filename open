@@ -7,41 +7,45 @@ if [ $# -eq 0 ] ; then
     exit 0
 fi
 
+mimetype=$(file --mime-type -b $1 | cut -d / -f 1)
+
 #source
-if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]]; then
+if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]] ; then
+    app="$EDITOR"
+
+elif [[ $mimetype == "text" ]] ; then
     app="$EDITOR"
 
 #archive
-elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]]; then
+elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]] ; then
     app="file-roller"
 
 #video
-elif [[ $1 =~ \.(mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
+elif [[ $1 =~ \.(mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]] ; then
     app="mplayer"
 
 #audio
-elif [[ $1 =~ \.(mp3|wav|ogg)$ ]]; then
+elif [[ $1 =~ \.(mp3|wav|ogg)$ ]] ; then
     app="mplayer"
 
 #torrent
-elif [[ $1 =~ \.torrent ]]; then
+elif [[ $1 =~ \.torrent ]] ; then
     app="transmission-gtk"
 
 #pdf
-elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
+elif [[ $1 =~ \.(pdf|ps|djvu)$ ]] ; then
     app="evince"
 
 #eps
-elif [[ $1 =~ \.(eps|png)$ ]]; then
+elif [[ $1 =~ \.(eps|png)$ ]] ; then
     app="display"
 
-#image
-elif [[ $1 =~ \.(jpe?g|gif|tiff|bmp|icon)$ ]]; then
-    app="sxiv"
+elif [[ $mimetype == "image" ]] ; then
+    app="shotwell"
 
 #html
-elif [[ $1 =~ \.(html?|swf)$ ]]; then
-    app="chromium"
+elif [[ $1 =~ \.(html?|swf)$ ]] ; then
+    app=$BROWSER
 fi
 
 [[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
