@@ -38,7 +38,7 @@ def main():
         new_value = 0
 
     new_value = int(new_value)
-    with open(os.path.join(backlight_path,'brightness'), 'w') as f:
+    with open(os.path.join(backlight_path, 'brightness'), 'w') as f:
         f.write(str(new_value))
 
     percentage = int(new_value * 100 / max_value)

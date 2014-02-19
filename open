@@ -17,11 +17,11 @@ elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]]; then
 
 #video
 elif [[ $1 =~ \.(mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]]; then
-    app="mpv"
+    app="mplayer"
 
 #audio
 elif [[ $1 =~ \.(mp3|wav|ogg)$ ]]; then
-    app="mpv"
+    app="mplayer"
 
 #torrent
 elif [[ $1 =~ \.torrent ]]; then
@@ -29,7 +29,7 @@ elif [[ $1 =~ \.torrent ]]; then
 
 #pdf
 elif [[ $1 =~ \.(pdf|ps|djvu)$ ]]; then
-    app="okular"
+    app="evince"
 
 #eps
 elif [[ $1 =~ \.(eps|png)$ ]]; then
