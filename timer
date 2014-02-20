@@ -18,5 +18,5 @@ fi
 sleep $wait
 
 # Notification! and sound?!
-notify-send "timer" "RIIIIIIIIIIING! time is over!"
-aplay ~/bin/utils/alarm.wav
+notify-send --urgency critical "timer" "RIIIIIIIIIIING! time is over!"
+mplayer /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga
