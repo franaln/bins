@@ -8,10 +8,10 @@
 
 # sherlock config
 cachedir="$HOME/.cache/sherlock"
-open=ow
-filemanager=spacefm
-console=gnome-terminal
-browser=chromium
+open="open"
+filemanager="nautilus"
+console="gnome-terminal"
+browser="chromium"
 
 # dmenu config
 font=Cantarell-12
@@ -164,13 +164,17 @@ run_screen() {
 
 # Explore files
 run_explore() {
-
     cd "$HOME"
 
     choice=1
     while [ "$choice" ]; do
 
-        choice=$((echo ".." ; ls $PWD ; echo "[Open]") | xdmenu "[$(basename $(pwd))]")
+        ls $PWD
+
+        choice="$((echo ".." ; ls $PWD ; echo "[Open]") | xdmenu "[$(basename $(pwd))]")"
+
+        #choice=${choice/" "/"\ "}
+        echo "$choice"
 
         if [ "$choice" ] ; then
 
