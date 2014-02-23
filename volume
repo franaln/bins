@@ -28,18 +28,18 @@ osd() {
     if [[ $muted == "yes" ]] ; then
         osdify -p $vol -a
     else
+        [[ $vol  -ge 100 ]] && vol=100
+        [[ $vol  -le 0 ]] && vol=0
         osdify -p $vol
     fi
 }
 
 vol_up() {
-    [[ "$vol" -ge 100 ]] && return 0 ||
-    pactl set-sink-volume "$sink" -- +5%
+    [[ "$vol" -ge 100 ]] && return 0 || pactl set-sink-volume "$sink" -- +5%
 }
 
 vol_down() {
-    [[ "$vol" -le 0 ]] && return 0 ||
-    pactl set-sink-volume "$sink" -- -5%
+    [[ "$vol" -le 0 ]] && return 0 || pactl set-sink-volume "$sink" -- -5%
 }
 
 toggle() {
