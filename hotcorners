@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- python -*-
 # adapted from cb-hotcorners by corenominal
 
 from Xlib import display
@@ -6,7 +7,6 @@ from Xlib.ext.xtest import fake_input
 from Xlib import X
 from subprocess import check_output
 import sys, time, os
-
 
 check_intervall = 0.2
 
@@ -16,16 +16,7 @@ cmd_bottom_left_corner  = ''
 cmd_bottom_right_corner = ''
 
 
-
-def usage():
-    return """
-usage:
-    --kill          attempt to kill any running instances
-    --daemon        run daemon and listen for cursor triggers
-    """
-
-def run_daemon():
-
+def main():
     disp = display.Display()
     root = display.Display().screen().root
 
@@ -38,7 +29,6 @@ def run_daemon():
     bt = height - 1
 
     bounce = 40
-
 
     def mousepos():
         data = root.query_pointer()._data
@@ -59,7 +49,7 @@ def run_daemon():
             pos = mousepos()
             if pos[0] == 0 and pos[1] == 0:
                 mousemove(pos[0] + bounce, pos[1] + bounce)
-                os.system(cmd_top_left_corner + ' &')
+                os.system('(' + cmd_top_left_corner + ') &')
                 mousemove(pos[0] + bounce, pos[1] + bounce)
                 time.sleep(2)
 
@@ -89,24 +79,6 @@ def run_daemon():
                 os.system('(' + cmd_bottom_right_corner + ') &')
                 mousemove(pos[0] - bounce, pos[1] - bounce)
                 time.sleep(2)
-
-
-def kill_daemon():
-    print('Attempting to kill any running instances...')
-    os.system('pkill -9 -f hotcorners')
-    sys.exit(1)
-
-
-def main():
-
-    if len(sys.argv) < 2 or sys.argv[1] == '--help':
-        print(usage())
-    elif sys.argv[1] == '--kill':
-        kill_daemon()
-    elif sys.argv[1] == '--daemon':
-        run_daemon()
-    else:
-        print(usage())
 
 
 if __name__ == '__main__':

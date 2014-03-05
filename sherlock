@@ -35,7 +35,6 @@ xdmenu()
     dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
 }
 
-
 ## Open apps. Show recent apps first
 run_apps() {
 
@@ -65,6 +64,11 @@ run_apps() {
     ($cmd | ${SHELL:-"/bin/sh"} &)
 }
 
+## Run command
+run_cmd() {
+
+}
+
 ## Power options
 run_power() {
     power_opts=("lock" "logout" "suspend" "poweroff" "reboot" "hibernate")
@@ -86,7 +90,6 @@ run_power() {
 
 ## Calculator
 run_calc() {
-
     result=$(xdmenu "calc" | xargs echo | calc | sed "s/\t//g")
 
     if [ "$result" != "" ] ; then
@@ -94,26 +97,33 @@ run_calc() {
         exit 0
     else
         exit 1
-        fi
+    fi
 }
 
 ## Search files
-run_search() {
-
+search() {
     input=$(xdmenu "search")
 
-    result=""
+    selected=""
     if [ "$input" != '' ] ; then
-        result=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
+        selected=$(echo "$input" | locate -e -r "$input" | xdmenu "result" )
     else
         return 1
     fi
 
-    if [ "$result" != "" ] ; then
-        $open "$result"
+    if [ "$selected" != "" ] ; then
+        ${open} "${selected}"
     else
-        return 1
+        return 0
     fi
+}
+
+run_search() {
+    status=0
+    while [ $status ] ; do
+        search
+        status=$?
+    done
 }
 
 ## Screen/VGA/HDMI options
@@ -152,7 +162,7 @@ run_screen() {
         "Laptop and VGA")
             xrandr --output VGA1 --auto --primary --output eDP1 --auto --right-of VGA1
             xrandr --output HDMI1 --off
-                ;;
+            ;;
         "Laptop and HDMI")
             xrandr --output eDP1  --auto
             xrandr --output HDMI1 --auto
@@ -325,11 +335,12 @@ else
 fi
 
 case "$option" in
-    apps)    run_apps ;;
-    power)   run_power ;;
-    calc)    run_calc ;;
-    search)  run_search ;;
-    screen)  run_screen ;;
+    apps)    run_apps    ;;
+    cmd)     run_cmd     ;;
+    power)   run_power   ;;
+    calc)    run_calc    ;;
+    search)  run_search  ;;
+    screen)  run_screen  ;;
     explore) run_explore ;;
-    google)  run_google ;;
+    google)  run_google  ;;
 esac

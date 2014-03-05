@@ -1,6 +1,6 @@
 #! /bin/bash
 # open file with the correponding app. if not file is passed, open current dir with emacs.
-# usage: ow filename
+# usage: open filename
 
 if [ $# -eq 0 ] ; then
     $EDITOR .
@@ -51,6 +51,6 @@ fi
 [[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
 
 while [[ $1 ]] ; do
-    setsid setsid $app $1
+    setsid setsid "$app" "$1"
     shift
 done
