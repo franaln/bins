@@ -13,7 +13,7 @@ check_intervall = 0.2
 cmd_top_left_corner     = 'sherlock apps'
 cmd_top_right_corner    = ''
 cmd_bottom_left_corner  = ''
-cmd_bottom_right_corner = ''
+cmd_bottom_right_corner = 'showtime'
 
 
 def main():

@@ -4,22 +4,26 @@
 url=mms://201.212.5.144/metro
 #url=mms://201.212.5.144/audio959-rockandpop
 
+TMPFILE="/home/fran/metro/metro.tmp"
+FILE="/home/fran/metro/metro_"$(date +%d%m%Y)".asf"
+
+
 while :
 do
     notify-send "Playing Metro 95.1"
-    mplayer $url -cache 1000
+    mpv $url
     #-dumpstream -dumpfile recital_muse.asf
     sleep 2
 done
 
 
-# TMPFILE="metro"
+# create pipe
+#mkfifo $TMPFILE
 
-# # create pipe
-# mkfifo $TMPFILE
+# read stream from pipe and send it to file and mplayer
+#cat $TMPFILE | tee -a -i $FILE | mplayer - &
 
-# # read stream from pipe and send it to file and mplayer
-# cat $TMPFILE | tee -a -i video.asf | mplayer - &
+# send data to pipe
+#mplayer $url -dumpstream -dumpfile $TMPFILE
 
-# # send data to pipe
-# mplayer $url -dumpstream -dumpfile $TMPFILE
+#rm $TMPFILE

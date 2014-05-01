@@ -32,7 +32,7 @@ ypos=$[$yres / 2 - $height*$lines / 2]
 # executes dmenu. takes prompt as argument
 xdmenu()
 {
-    dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" -p $1
+    dmenu -i -l "$lines" -fn "$font" -sf "$sf_color" -sb "$sb_color" -nf "$nf_color" -nb "$nb_color" -h "$height" -w "$width" -y "$ypos" -x "$xpos" #-p $1
 }
 
 ## Open apps. Show recent apps first
@@ -66,7 +66,7 @@ run_apps() {
 
 ## Run command
 run_cmd() {
-
+    return 0
 }
 
 ## Power options
@@ -161,6 +161,7 @@ run_screen() {
             ;;
         "Laptop and VGA")
             xrandr --output VGA1 --auto --primary --output eDP1 --auto --right-of VGA1
+            #xrandr --output VGA1 --auto --primary --output eDP1 --auto --below VGA1
             xrandr --output HDMI1 --off
             ;;
         "Laptop and HDMI")
@@ -228,8 +229,8 @@ run_google() {
     GS=$(xsel -o | xdmenu "google")
 
     if [ "$GS" != "" ] ; then
-        $browser  http://www.google.com.ar/search?q="$GS"
-        wmctrl -a $browser
+        ${browser}  http://www.google.com.ar/search?q="$GS"
+        wmctrl -a ${browser}
     else
         return 0
     fi
@@ -320,7 +321,7 @@ option=""
 
 # If there is no input show options...
 if [ $# -eq 0 ] ; then
-    opts=("apps" "google" "explore" "power" "screen" "search" "calc")
+    opts=("apps" "cmd" "google" "explore" "power" "screen" "search" "calc")
 
     choice=$(printf "%s\n" "${opts[@]}" | xdmenu "sherlock")
     if [ "$choice" == "" ] ; then
