@@ -1,56 +1,104 @@
 #! /bin/bash
-# open file with the correponding app. if not file is passed, open current dir with emacs.
-# usage: open filename
+# open file with the correponding app.
+# usage: open [files]
 
+# if not file is passed, open current dir with emacs.
 if [ $# -eq 0 ] ; then
     $EDITOR .
     exit 0
 fi
 
-mimetype=$(file --mime-type -b $1 | cut -d / -f 1)
+get_mimetype() {
+    echo $(file --mime-type -b ${1} | cut -d / -f 1)
+}
 
-#source
-if [[ $1 =~ \.([ch]|txt|sh|s|c|cpp|cxx|tex|h|py|cc|log)$ ]] ; then
-    app="$EDITOR"
+get_extension() {
+    echo "${1##*.}"
+}
 
-elif [[ $mimetype == "text" ]] ; then
-    app="$EDITOR"
+get_app() {
 
-#archive
-elif [[ $1 =~ \.(tar|gz|rar|zip|7z|lha|bz2|tgz)$ ]] ; then
-    app="file-roller"
+    # first try using extensions
+    ext=$(get_extension ${1})
 
-#video
-elif [[ $1 =~ \.(mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)$ ]] ; then
-    app="mplayer"
+    case $ext in
+        # text
+        txt|sh|c|cpp|cxx|tex|h|py|cc|log)
+            app="$EDITOR" ;;
 
-#audio
-elif [[ $1 =~ \.(mp3|wav|ogg)$ ]] ; then
-    app="mplayer"
+        # archive
+        tar|gz|rar|zip|7z|lha|bz2|tgz)
+            app="file-roller" ;;
 
-#torrent
-elif [[ $1 =~ \.torrent ]] ; then
-    app="transmission-gtk"
+        # video
+        mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)
+            app="mplayer" ;;
 
-#pdf
-elif [[ $1 =~ \.(pdf|ps|djvu)$ ]] ; then
-    app="evince"
+        #audio
+        mp3|wav|ogg)
+            app="mplayer" ;;
 
-#eps
-elif [[ $1 =~ \.(eps|png)$ ]] ; then
-    app="display"
+        #torrent
+        torrent)
+            app="transmission-gtk" ;;
 
-elif [[ $mimetype == "image" ]] ; then
-    app="shotwell"
+        #pdf
+        pdf|ps|djvu)
+            app="evince" ;;
 
-#html
-elif [[ $1 =~ \.(html?|swf)$ ]] ; then
-    app=$BROWSER
+        #eps
+        eps|png)
+            app="display" ;;
+
+        #html
+        html?|swf)
+            app=$BROWSER ;;
+    esac
+
+    if [[ -n "$1" ]] ; then
+        echo $app
+        return 0
+    fi
+
+    # if not app, use mimetype
+    mimetype=$(get_mimetype ${1})
+
+    case $mimetype in
+        text)
+            app="$EDITOR" ;;
+        image)
+            app="shotwell" ;;
+    esac
+
+    if [[ -n "$1" ]] ; then
+        echo $app
+        return 0
+    fi
+
+    return 1
+}
+
+# args: app, file
+open() {
+    setsid setsid ${1} ${2}
+}
+
+# if only one file
+if [ $# -eq 1 ] ; then
+    app=$(get_app ${1})
+    open ${app} ${1}
+else
+
+    while [[ $1 ]] ; do
+        apptmp=$(get_app ${1})
+
+        if [[ "$app" == "$apptmp" ]] ; then
+
+
+        shift
+    done
+
+
+#[[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
+
 fi
-
-[[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
-
-while [[ $1 ]] ; do
-    setsid setsid "$app" "$1"
-    shift
-done
