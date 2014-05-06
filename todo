@@ -1,62 +1,194 @@
-#! /usr/bin/env bash
+#! /usr/bin/env python
 # todo list
 
-todofile=$HOME/.todo
+import os
+import sys
 
-test -f $todofile || touch $todofile
+# Colours
+green   = '\033[92m'
+red     = '\033[91m'
+blue    = '\033[94m'
+purple  = "\033[95m"
+endc    = '\033[0m'
+
+TODO_DIR = os.path.expanduser('~/.todo')
+TODO_FILE = os.path.join(TODO_DIR, 'todo')
 
 
-# show list
-if [ $# = 0 ] ; then
+def show_usage():
+    print("""todo
+----
 
-    if [ `cat $todofile | wc -l` = 0 ] ; then
-        exit 0
-    else
-        echo "todo"
-        echo "----"
-        echo
+  Usage: todo [cmd] [arg]
 
-        cat $todofile | while read line ; do
-            echo "* "$line
+  Cmds:
+       help   show this
+       add    add a task (category/task)
+       rm     remove a task
 
-        done
-        echo
-    fi
+""")
 
-# show usage
-elif [ $1 = -h ] ; then
 
-    echo "todo"
-    echo "----"
-    echo
-    echo " Usage: todo <task to add>"
-    echo "        todo [option]"
-    echo
-    echo " Options: -r  remove a task"
-    echo "          -c  clear all tasks"
-    echo "          -h  show usage"
-    echo
+#-----
+# git
+#-----
+def git_commit(msg):
+    print(msg)
+    print(TODO_FILE)
 
-# clear list
-elif [ $1 = -c ] ; then
-    > $todofile
+    os.system('git add %s' % TODO_FILE)
+    os.system('git commit -m \"%s\"' % msg)
 
-# remove task
-elif [ $1 = -r ] ; then
+#----------------
+# Load/save file
+#----------------
+def load_file():
 
-    i=1
-    cat $todofile | while read line ; do
-        echo "* $line ($i)"
-        i=$(($i+1))
+    todo = dict()
 
-    done
+    with open(TODO_FILE) as f:
+        for line in f:
+            line = line[:-1]
 
-    echo -ne "Remove: "
-    read NUMBER
-    sed -ie ${NUMBER}d $todofile
+            if line.startswith('#'):
+                category = line[2:].lower()
+                todo[category] = []
+            elif line.startswith('-'):
+                todo[category].append(line[2:])
 
-# add task
-else
-    echo $@ >> $todofile
+    return todo
 
-fi
+def save_file(todo):
+    with open(TODO_FILE, 'w') as f:
+
+        for category, tasks in todo.items():
+            f.write('# %s\n' % category)
+            for task in tasks:
+                f.write('- %s\n' % task)
+
+            f.write('\n')
+
+#----------
+# Commands
+#----------
+def init(dir_):
+    """
+    Init directory, file and git repository
+
+    """
+
+    try:
+        os.makedirs(TODO_DIR)
+    except OSError as exc:
+        if os.path.isdir(path):
+            pass
+        else:
+            raise
+
+    open(TODO_FILE, 'w')
+    print('Initialized file and directory for todo...')
+
+    os.system('git init')
+
+
+def show():
+    """
+    Show
+    """
+
+    todo = load_file()
+
+    print('\ntodo')
+    print('----\n')
+
+    if not todo:
+        print('Empty... Nothing to do :P')
+
+    for cat, tasks in todo.items():
+        print('# %s'% cat)
+
+        for task in tasks:
+            print('- %s' % task)
+
+        print('')
+
+
+# remove_task() {
+#     i=1
+#     cat $todofile | while read line ; do
+#         echo "* $line ($i)"
+#         i=$(($i+1))
+
+#     done
+
+#     echo -ne "Remove: "
+#     read NUMBER
+#     sed -ie ${NUMBER}d $todofile
+
+# }
+
+def add(task_path):
+
+    todo = load_file()
+
+    path_sep = task_path.split('/')
+
+    if len(path_sep) > 1:
+        category = path_sep[0]
+        task = path_sep[1]
+    else:
+        category = 'main'
+        task = path_sep[0]
+
+    if not category in todo:
+        todo[category] = []
+
+    todo[category].append(task)
+
+    save_file(todo)
+    git_commit('Add task %s' % task_path)
+
+
+def main():
+
+    os.environ['GIT_DIR'] = os.path.join(TODO_DIR, '.git')
+    os.environ['GIT_WORK_TREE'] = TODO_DIR
+
+    cmd = sys.argv[1] if len(sys.argv) >= 2 else ''
+
+    # init
+    if os.path.isdir(TODO_DIR) and os.path.isfile(TODO_FILE):
+        pass
+    else:
+        if cmd == 'init':
+            dir_ = sys.argv[2] if len(sys.argv) > 2 else None
+            init(dir_)
+        else:
+            print('You have to initialize todo first.')
+            #print('Run "todo init [DIR]". If not DIR is given the default is ~/.todo')
+            return
+
+    # show
+    if not cmd:
+        show()
+
+    # help
+    elif cmd in ['help', '-h', '--help']:
+        show_usage()
+
+    # add task
+    elif cmd == 'add':
+        if not len(sys.argv) > 2:
+            print('')
+
+        add(sys.argv[2])
+
+    # elif cmd == 'rm':
+    #     remove_task()
+
+    elif cmd == 'edit':
+        pass #edit()
+
+
+if __name__ == '__main__':
+     main()
