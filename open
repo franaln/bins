@@ -32,11 +32,11 @@ get_app() {
 
         # video
         mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)
-            app="mplayer" ;;
+            app="mpv" ;;
 
         #audio
         mp3|wav|ogg)
-            app="mplayer" ;;
+            app="mpv" ;;
 
         #torrent
         torrent)
@@ -49,6 +49,10 @@ get_app() {
         #eps
         eps|png)
             app="display" ;;
+
+        #images
+        jpg|jpeg|JPG|JPEG|gif)
+            app="sxiv" ;;
 
         #html
         html?|swf)
@@ -87,18 +91,11 @@ open() {
 if [ $# -eq 1 ] ; then
     app=$(get_app ${1})
     open ${app} ${1}
+
 else
-
     while [[ $1 ]] ; do
-        apptmp=$(get_app ${1})
-
-        if [[ "$app" == "$apptmp" ]] ; then
-
-
+        app=$(get_app ${1})
+        open ${app} ${1}
         shift
     done
-
-
-#[[ "$app" == "$EDITOR" ]] && $EDITOR $1 && exit 0
-
 fi
