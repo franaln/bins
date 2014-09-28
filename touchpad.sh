@@ -9,6 +9,8 @@ synclient ClickFinger3=0
 synclient HorizEdgeScroll=1
 synclient HorizTwoFingerScroll=1
 synclient VertTwoFingerScroll=1
+#synclient FingerLow=30
+#synclient FingerHigh=32
 
 # if touchegg
 # synclient TapButton2=0
