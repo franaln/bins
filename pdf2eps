@@ -1,0 +1,9 @@
+#! /bin/sh
+# Convert PDF to encapsulated PostScript.
+# pdf2eps <pdf file>
+
+fname="${1%.*}"
+
+pdfcrop "$fname.pdf" "$fname-temp.pdf"
+pdftops -eps "$fname-temp.pdf" "$fname.eps"
+rm "$fname-temp.pdf"
