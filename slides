@@ -2,11 +2,10 @@
 
 import sys, os
 
-usage = """Usage: slides.py NAME
-Creates a directory NAME in the current directory with the following files: slides.tex, style.tex, physics.tex and makefile."""
+usage = """Usage: slides.py name
+creates directory \"name\" in the current directory with the following files: slides.tex, style.tex, physics.tex and makefile."""
 
 makefile = """
-
 MAIN = slides
 
 EXTRA = $(MAIN).toc $(MAIN).aux $(MAIN).out $(MAIN).toc $(MAIN).log $(MAIN).snm $(MAIN).vrb $(MAIN).nav $(MAIN).dvi $(MAIN).ps
@@ -47,11 +46,12 @@ style = r"""
 %\usepackage{multirow}
 %\usepackage{verbatim}
 %\usepackage{pstricks,pst-grad}
-\usepackage{hyperref} % links
+%\usepackage[percent]{overpic}
+%\usepackage{hyperref} % links
 %\usepackage{tikz}
 %\usetikzlibrary{arrows,shapes,shadows,positioning}
 
-\graphicspath{{./images/}} % Images folder
+\graphicspath{{./images/}}
 
 % --------------
 %  Style config
@@ -62,15 +62,12 @@ style = r"""
 \setbeamersize{text margin left=.2cm}
 \setbeamersize{text margin right=.2cm}
 
-\definecolor{mcolor}{HTML}{6187bb} % azulado
-\definecolor{scolor}{HTML}{5ace60} % green
+\definecolor{mcolor}{HTML}{4665A3} % azulado
 \definecolor{mgray}{HTML}{4D4D4D}  % gray
-\definecolor{sgray}{HTML}{9e9e9e}
-\definecolor{tgray}{HTML}{E3E3E3}
+\definecolor{sgray}{HTML}{9E9E9E}
 \definecolor{agray}{HTML}{1C1C1C}
 
 \setbeamercolor*{frametitle}{bg=mcolor,fg=white}
-%%\setbeamercolor*{frametitle}{bg=white,fg=mcolor}
 \setbeamercolor*{item}{fg=agray}
 \setbeamercolor*{title}{fg=mcolor}
 \setbeamercolor*{author}{fg=mgray}
@@ -138,10 +135,10 @@ style = r"""
 % -------------
 %  Tikz shapes
 % -------------
-\newcommand{\redrectangle}[1]{\tikz[baseline] \node[rectangle, thick, fill=red!30, anchor=base] {#1};}
-\newcommand{\bluerectangle}[1]{\tikz[baseline] \node[rectangle, thick, fill=mcolor!30, anchor=base] {#1};}
-\newcommand{\greenrectangle}[1]{\tikz[baseline] \node[rectangle, thick, fill=green!30, anchor=base] {#1};}
-\newcommand{\grayrectangle}[1]{\tikz[baseline] \node[rectangle, thick, fill=black!30, anchor=base]{#1};}
+\newcommand{\redrectangle}[1]{\tikz[baseline] \node[rectangle,thick,fill=red!30,anchor=base]{#1};}
+\newcommand{\bluerectangle}[1]{\tikz[baseline] \node[rectangle,thick,fill=mcolor!30,anchor=base]{#1};}
+\newcommand{\greenrectangle}[1]{\tikz[baseline] \node[rectangle,thick,fill=green!30,anchor=base]{#1};}
+\newcommand{\grayrectangle}[1]{\tikz[baseline] \node[rectangle,thick,fill=black!30,anchor=base]{#1};}
 \newcommand{\tikztag}[1]{\tikz[baseline] \node (#1) {};}
 
 % -----------------
@@ -153,11 +150,13 @@ style = r"""
 \newcommand{\ptitle}[1]{\begin{flushleft}{\large \bf #1}\end{flushleft}}
 \newcommand{\onlytitle}[1]{\begin{center} \fontsize{5cm}{1em}\selectfont \bf \color{sgray} #1 \end{center}}
 \newcommand{\oneitem}[1]{\begin{itemize} \item #1 \end{itemize}}
-\def\colorarrow{{\color{mcolor}\ensuremath{\to}}}
+\newcommand{\colorarrow}{{\color{mcolor}\ensuremath{\to}}}
 \newcommand{\colorify}[1]{{\color{mcolor} #1}}
-\def\beginbackup{\begin{frame}\onlytitle{Backup}\end{frame}}
+\newcommand{\beginbackup}{\begin{frame}\onlytitle{Backup}\end{frame}}
 \newcommand{\fix}[1]{{\color{red} #1}}
-\def\hr{\begin{center} \line(1,0){350} \end{center}}
+\newcommand{\hr}{\begin{center} \line(1,0){350} \end{center}}
+\newcommand{\img}[2]{\includegraphics[width=#1\textwidth]{#2}}
+\newcommand{\overimg}[4]{\begin{overpic}[width=#1\textwidth]{#2} \put(#3){\tiny #4} \end{overpic}}
 
 """
 
@@ -394,7 +393,7 @@ template = r"""
 
 \title{\bf Title}
 \author{Francisco Alonso}
-\institute{\small UNLP/CONICET}
+\institute{\small UNLP}
 \date{meeting - \today}
 
 \begin{document}
@@ -418,7 +417,6 @@ def main():
       return 1
 
    project_name = sys.argv[1]
-   #texfile_name = project_name.lower()
 
    # create slides dir and images dir inside
    try:
