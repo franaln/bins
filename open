@@ -47,11 +47,11 @@ get_app() {
             app="evince" ;;
 
         #eps
-        eps|png)
+        eps)
             app="display" ;;
 
         #images
-        jpg|jpeg|JPG|JPEG|gif)
+        png|jpg|jpeg|JPG|JPEG|gif)
             app="sxiv" ;;
 
         #html
@@ -71,7 +71,7 @@ get_app() {
         text)
             app="$EDITOR" ;;
         image)
-            app="shotwell" ;;
+            app="sxiv" ;;
     esac
 
     if [[ -n "$1" ]] ; then
@@ -84,7 +84,7 @@ get_app() {
 
 # args: app, file
 open() {
-    setsid setsid ${1} ${2}
+    setsid setsid ${1} ${2} > /dev/null 2>&1
 }
 
 # if only one file
