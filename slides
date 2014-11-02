@@ -382,11 +382,12 @@ physics = r"""%
 \def\tagprobe{tag \& probe}
 \def\RT{\ensuremath{R_T^2}}
 \def\dphijetmet{\ensuremath{\Delta\phi(\text{jet},\amet)}}
-\def\dphiphjet{\ensuremath{\Delta\phi(\gam, \text{jet})}}
+\def\dphigamjet{\ensuremath{\Delta\phi(\gam, \text{jet})}}
 """
 
 template = r"""
 \documentclass[center,10pt,cm]{beamer}
+\usepackage{etex}
 
 \input{style.tex}
 \input{physics.tex}
