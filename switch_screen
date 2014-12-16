@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# devices=$(xrandr -q | grep [[:upper:]]1)
+
+# availableopts[0]="laptop"
+
+# if [[ $devices == *"VGA1 connected"* ]] ; then
+#     availableopts[1]="vga"
+# fi
+
+# if [[ $devices == *"HDMI1 connected"* ]] ; then
+#     availableopts[1]="HDMI"
+# fi
+
+function connect_laptop () {
+    xrandr --output eDP1 --auto
+    xrandr --output HDMI1 --off
+    xrandr --output VGA1  --off
+}
+
+function connect_vga () {
+    xrandr --output VGA1  --auto
+    xrandr --output eDP1  --off
+    xrandr --output HDMI1 --off
+}
+
+function connect_hdmi () {
+    xrandr --output HDMI1 --auto
+    xrandr --output VGA1  --off
+    xrandr --output eDP1  --off
+}
+
+file="${HOME}/.current_screen"
+
+if grep -q laptop "$file"; then
+    connect_vga
+    echo vga > "$file"
+    
+elif grep -q vga "$file" ; then
+    connect_laptop
+    echo laptop > "$file"
+fi
+
+
