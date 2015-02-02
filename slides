@@ -62,10 +62,11 @@ style = r"""
 \setbeamersize{text margin left=.2cm}
 \setbeamersize{text margin right=.2cm}
 
-\definecolor{mcolor}{HTML}{4665A3} % azulado
+\definecolor{mcolor}{HTML}{37437F} % azulado
 \definecolor{mgray}{HTML}{4D4D4D}  % gray
 \definecolor{sgray}{HTML}{9E9E9E}
 \definecolor{agray}{HTML}{1C1C1C}
+\definecolor{mred}{HTML}{E63753}
 
 \setbeamercolor*{frametitle}{bg=mcolor,fg=white}
 \setbeamercolor*{item}{fg=agray}
@@ -153,10 +154,12 @@ style = r"""
 \newcommand{\colorarrow}{{\color{mcolor}\ensuremath{\to}}}
 \newcommand{\colorify}[1]{{\color{mcolor} #1}}
 \newcommand{\beginbackup}{\begin{frame}\onlytitle{Backup}\end{frame}}
-\newcommand{\fix}[1]{{\color{red} #1}}
+\newcommand{\fix}[1]{{\color{mred} #1}}
+\newcommand{\focus}[1]{{\color{mred} #1}}
 \newcommand{\hr}{\begin{center} \line(1,0){350} \end{center}}
 \newcommand{\img}[2]{\includegraphics[width=#1\textwidth]{#2}}
 \newcommand{\overimg}[4]{\begin{overpic}[width=#1\textwidth]{#2} \put(#3){\tiny #4} \end{overpic}}
+\newcommand{\vsp}{\vspace{0.5cm}}
 
 """
 
@@ -377,16 +380,14 @@ physics = r"""%
 \let\ev=\eV
 
 \def\tagprobe{tag \& probe}
-\def\ge{\ensuremath{>}}
-\def\le{\ensuremath{<}}
-
 \def\RT{\ensuremath{R_T^2}}
 \def\dphijetmet{\ensuremath{\Delta\phi(\text{jet},\amet)}}
-\def\dphiphjet{\ensuremath{\Delta\phi(\gam, \text{jet})}}
+\def\dphigamjet{\ensuremath{\Delta\phi(\gam, \text{jet})}}
 """
 
 template = r"""
 \documentclass[center,10pt,cm]{beamer}
+\usepackage{etex}
 
 \input{style.tex}
 \input{physics.tex}
