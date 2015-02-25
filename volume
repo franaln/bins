@@ -35,11 +35,11 @@ osd() {
 }
 
 vol_up() {
-    [[ "$vol" -ge 100 ]] && return 0 || pactl set-sink-volume "$sink" -- +5%
+    [[ "$vol" -ge 100 ]] && return 0 || pactl set-sink-volume "$sink" +5%
 }
 
 vol_down() {
-    [[ "$vol" -le 0 ]] && return 0 || pactl set-sink-volume "$sink" -- -5%
+    [[ "$vol" -le 0 ]] && return 0 || pactl set-sink-volume "$sink" -5%
 }
 
 toggle() {

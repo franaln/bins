@@ -19,7 +19,7 @@ get_extension() {
 get_app() {
 
     # first try using extensions
-    ext=$(get_extension ${1})
+    ext=$(get_extension "${1}")
 
     case $ext in
         # text
@@ -84,18 +84,18 @@ get_app() {
 
 # args: app, file
 open() {
-    setsid setsid ${1} ${2} > /dev/null 2>&1
+    setsid setsid "${1}" "${2}" > /dev/null 2>&1
 }
 
 # if only one file
 if [ $# -eq 1 ] ; then
-    app=$(get_app ${1})
-    open ${app} ${1}
+    app=$(get_app "${1}")
+    open ${app} "${1}"
 
 else
     while [[ $1 ]] ; do
-        app=$(get_app ${1})
-        open ${app} ${1}
+        app=$(get_app "${1}")
+        open ${app} "${1}"
         shift
     done
 fi
