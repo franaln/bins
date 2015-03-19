@@ -90,12 +90,12 @@ open() {
 # if only one file
 if [ $# -eq 1 ] ; then
     app=$(get_app "${1}")
-    open ${app} "${1}"
+    open "${app}" "${1}"
 
 else
     while [[ $1 ]] ; do
         app=$(get_app "${1}")
-        open ${app} "${1}"
+        open "${app}" "${1}"
         shift
     done
 fi

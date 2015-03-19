@@ -25,6 +25,7 @@ setup() {
 
 osd() {
     setup
+    killall osdify > /dev/null
     if [[ $muted == "yes" ]] ; then
         osdify -p $vol -a
     else
