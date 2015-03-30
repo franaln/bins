@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# devices=$(xrandr -q | grep [[:upper:]]1)
+devices=$(xrandr -q | grep [[:upper:]]1)
 
 # availableopts[0]="laptop"
+
+function check_vga () {
+    return
+    }
 
 # if [[ $devices == *"VGA1 connected"* ]] ; then
 #     availableopts[1]="vga"
@@ -32,13 +36,22 @@ function connect_hdmi () {
 
 file="${HOME}/.current_screen"
 
+echo $devices
+
 if grep -q laptop "$file"; then
-    connect_vga
-    echo vga > "$file"
-    
+
+    if [[ $devices == *"HDMI1"* ]] ; then
+        connect_hdmi
+        echo hdmi > "$file"
+    elif [[ $devices == *"VGA1 connected"* ]] ; then
+        connect_vga
+        echo vga > "$file"
+    fi
+
 elif grep -q vga "$file" ; then
-    connect_laptop
-    echo laptop > "$file"
-fi
+#     connect_laptop
+#     echo laptop > "$file"
+# fi
 
-
+# pactl set-card-profile 0 output:hdmi-stereo
+# output:analog-stereo+input:analog-stereo
