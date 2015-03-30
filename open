@@ -48,11 +48,11 @@ get_app() {
 
         #eps
         eps)
-            app="display" ;;
+            app="evince" ;;
 
         #images
         png|jpg|jpeg|JPG|JPEG|gif)
-            app="sxiv" ;;
+            command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
 
         #html
         html?|swf)
