@@ -9,7 +9,7 @@ if [ $# -eq 0 ] ; then
 fi
 
 get_mimetype() {
-    echo $(file --mime-type -b ${1} | cut -d / -f 1)
+    file --mime-type -b "${1}" | cut -d / -f 1
 }
 
 get_extension() {
@@ -48,11 +48,11 @@ get_app() {
 
         #eps
         eps)
-            app="display" ;;
+            app="evince" ;;
 
         #images
         png|jpg|jpeg|JPG|JPEG|gif)
-            app="sxiv" ;;
+            command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
 
         #html
         html?|swf)
@@ -60,12 +60,12 @@ get_app() {
     esac
 
     if [[ -n "$1" ]] ; then
-        echo $app
+        echo "$app"
         return 0
     fi
 
     # if not app, use mimetype
-    mimetype=$(get_mimetype ${1})
+    mimetype=$(get_mimetype "${1}")
 
     case $mimetype in
         text)
@@ -75,7 +75,7 @@ get_app() {
     esac
 
     if [[ -n "$1" ]] ; then
-        echo $app
+        echo "$app"
         return 0
     fi
 
