@@ -1,0 +1,184 @@
+#! /usr/bin/env python
+
+import os
+import re
+import sys
+import argparse
+import subprocess as sp
+from datetime import datetime
+
+#main_name = 'slides'
+
+# main_tex = main_name + '.tex'
+# main_pdf = main_name + '.pdf'
+# main_log = main_name + '.log'
+
+
+def find_tex_file():
+
+    tex_files = []
+    for f in os.listdir('.'):
+        if f.endswith('.tex'):
+            tex_files.append(f)
+
+    if len(tex_files) == 1:
+        return tex_files[0]
+    else:
+        for f in tex_files:
+            tex = open(f).readline()
+            if tex.startswith(r'\documentclass'):
+                return f
+
+def get_mtime(fname):
+    return os.path.getmtime(fname)
+
+def get_dependence(fname):
+    dependence = []
+    for line in open(fname):
+        line = line.replace('\n', '')
+        try:
+            dep = re.match(r'\\[input|include]{(.*)}', line).groups()[0]
+            if dep is not None:
+                dependence.append(dep)
+
+        except:
+            pass
+
+    return dependence
+
+# Colorize LaTeX output.
+C_WARNING = '\033[93m'
+C_ERROR   = '\033[0;31m'
+C_INFO    = '\033[0;32m'
+C_RESET   = '\033[0m'
+
+def colorize_latex_output(texfile):
+
+    logfile = texfile.replace('.tex', '.log')
+
+    try:
+        log = open(logfile).read().split('\n')
+    except UnicodeDecodeError as e:
+        try:
+            for i, line in enumerate(log):
+                pass
+        except UnicodeDecodeError:
+            print(i, line)
+            print(C_ERROR + 'Weird character in the last line!' + C_RESET)
+            return
+
+    #line_error = re.compile('^\./%s\:(\d*)\: (.*)' % texfile)
+    line_error = re.compile('^\./(\w*.tex)\:(\d*)\: (.*)')
+
+    show_warnings = args.debug
+
+    n_warning = 0
+    n_error = 0
+    for i, line in enumerate(log):
+
+        if 'Output written on' in line:
+            print('\n'+ C_INFO + '==> ' + line.replace(').', '') + ', %i wanings, %i errors).' % (n_warning, n_error) + C_RESET)
+        elif 'No pages of output' in line:
+            print(C_INFO + line + C_RESET)
+
+        if 'Underfull' in line or 'Overfull' in line or 'Warning:' in line:
+            n_warning += 1
+            if show_warnings:
+                print(C_WARNING + line + C_RESET)
+
+        le = line_error.match(line)
+        if le:
+            print(C_ERROR + '%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]) + C_RESET)
+            n_error += 1
+
+def compile_latex(texfile):
+
+    pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error %s > /dev/null' % texfile
+
+    os.system(pdflatex_cmd)
+    os.system(pdflatex_cmd)
+
+    colorize_latex_output(texfile)
+
+def crop_pdf(pdffile):
+
+    os.system('pdfcrop {0} {1}'.format(tmp_pdf, pdf_path))
+
+
+def clean_all(main_name):
+
+    to_rm = [
+        main_name+'.toc',
+        main_name+'.aux',
+        main_name+'.out',
+        main_name+'.log',
+        main_name+'.snm',
+        main_name+'.vrb',
+        main_name+'.nav',
+        main_name+'.dvi',
+        main_name+'.ps',
+        main_name+'.pdf',
+        ]
+
+    for f in to_rm:
+        try:
+            os.unlink(f)
+        except FileNotFoundError:
+            pass
+
+def main():
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('texfile', nargs='?', help='')
+    parser.add_argument('-f', dest='force', action='store_true', help='Force compilation')
+    parser.add_argument('-c', dest='clean', action='store_true', help='Clean all')
+    parser.add_argument('-g', dest='debug', action='store_true', help='Show all warnings')
+    parser.add_argument('-o', dest='open', action='store_true', help='Open pdf')
+
+    global args
+    args = parser.parse_args()
+
+    if args.texfile is not None:
+        main_tex = args.texfile
+    else:
+        main_tex = find_tex_file()
+
+    main_name = main_tex.replace('.tex', '')
+    main_pdf = main_name + '.pdf'
+
+    if args.clean:
+        clean_all(main_name)
+        return
+
+    if args.force:
+        clean_all(main_name)
+
+    need_compile = False
+    if not os.path.isfile(main_pdf):
+        need_compile = True
+    else:
+        main_pdf_time = datetime.fromtimestamp(get_mtime(main_pdf))
+        main_tex_time = datetime.fromtimestamp(get_mtime(main_tex))
+
+        diff = (main_tex_time-main_pdf_time).total_seconds()
+        if diff > 0:
+            need_compile = True
+        else:
+            for dep in get_dependence(main_tex):
+
+                dep_time = datetime.fromtimestamp(get_mtime(dep))
+                if (main_pdf_time - dep_time).total_seconds() < 0:
+                    need_compile = True
+                    break
+
+    if need_compile:
+        compile_latex(main_tex)
+    else:
+        print(C_INFO + 'nothing to be done' + C_RESET)
+
+    if args.open:
+        os.system('open %s' % main_pdf)
+
+if __name__ == '__main__':
+    main()
