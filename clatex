@@ -7,15 +7,7 @@ import argparse
 import subprocess as sp
 from datetime import datetime
 
-#main_name = 'slides'
-
-# main_tex = main_name + '.tex'
-# main_pdf = main_name + '.pdf'
-# main_log = main_name + '.log'
-
-
 def find_tex_file():
-
     tex_files = []
     for f in os.listdir('.'):
         if f.endswith('.tex'):
@@ -25,8 +17,8 @@ def find_tex_file():
         return tex_files[0]
     else:
         for f in tex_files:
-            tex = open(f).readline()
-            if tex.startswith(r'\documentclass'):
+            tex = open(f).read()
+            if r'\documentclass' in tex:
                 return f
 
 def get_mtime(fname):
@@ -37,9 +29,19 @@ def get_dependence(fname):
     for line in open(fname):
         line = line.replace('\n', '')
         try:
-            dep = re.match(r'\\[input|include]{(.*)}', line).groups()[0]
+            dep = re.match(r'\\input{(.*)}', line).groups()[0]
             if dep is not None:
+                if not '.' in dep:
+                    dep += '.tex'
                 dependence.append(dep)
+                continue
+
+            dep = re.match(r'\\include{(.*)}', line).groups()[0]
+            if dep is not None:
+                if not '.' in dep:
+                    dep += '.tex'
+                dependence.append(dep)
+                continue
 
         except:
             pass
@@ -67,13 +69,11 @@ def colorize_latex_output(texfile):
             print(C_ERROR + 'Weird character in the last line!' + C_RESET)
             return
 
-    #line_error = re.compile('^\./%s\:(\d*)\: (.*)' % texfile)
     line_error = re.compile('^\./(\w*.tex)\:(\d*)\: (.*)')
-
-    show_warnings = args.debug
 
     n_warning = 0
     n_error = 0
+    show_warnings = args.debug
     for i, line in enumerate(log):
 
         if 'Output written on' in line:
@@ -131,10 +131,10 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('texfile', nargs='?', help='')
-    parser.add_argument('-f', dest='force', action='store_true', help='Force compilation')
-    parser.add_argument('-c', dest='clean', action='store_true', help='Clean all')
-    parser.add_argument('-g', dest='debug', action='store_true', help='Show all warnings')
-    parser.add_argument('-o', dest='open', action='store_true', help='Open pdf')
+    parser.add_argument('-f', dest='force', action='store_true', help='force compilation')
+    parser.add_argument('-c', dest='clean', action='store_true', help='clean all')
+    parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
+    parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
 
     global args
     args = parser.parse_args()
