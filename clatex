@@ -21,6 +21,8 @@ def find_tex_file():
             if r'\documentclass' in tex:
                 return f
 
+    return None
+
 def get_mtime(fname):
     return os.path.getmtime(fname)
 
@@ -143,6 +145,10 @@ def main():
         main_tex = args.texfile
     else:
         main_tex = find_tex_file()
+
+    if main_tex is None:
+        parser.print_usage()
+        return 1
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
