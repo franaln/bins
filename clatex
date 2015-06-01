@@ -61,15 +61,10 @@ def colorize_latex_output(texfile):
     logfile = texfile.replace('.tex', '.log')
 
     try:
-        log = open(logfile).read().split('\n')
+        enc='iso-8859-15'
+        log = open(logfile, 'r', encoding=enc).read().split('\n')
     except UnicodeDecodeError as e:
-        try:
-            for i, line in enumerate(log):
-                pass
-        except UnicodeDecodeError:
-            print(i, line)
-            print(C_ERROR + 'Weird character in the last line!' + C_RESET)
-            return
+        raise
 
     line_error = re.compile('^\./(\w*.tex)\:(\d*)\: (.*)')
 
@@ -97,7 +92,12 @@ def compile_latex(texfile):
 
     pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error %s > /dev/null' % texfile
 
-    os.system(pdflatex_cmd)
+    st = os.system(pdflatex_cmd)
+
+    if st == 1:
+        print('error')
+        return 1
+
     os.system(pdflatex_cmd)
 
     colorize_latex_output(texfile)
@@ -146,7 +146,7 @@ def main():
     else:
         main_tex = find_tex_file()
 
-    if main_tex is None:
+    if main_tex is None or not main_tex.endswith('.tex'):
         parser.print_usage()
         return 1
 
