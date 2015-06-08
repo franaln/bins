@@ -90,7 +90,10 @@ def colorize_latex_output(texfile):
 
 def compile_latex(texfile):
 
-    pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error %s > /dev/null' % texfile
+    if args.verbose:
+        pdflatex_cmd = 'pdflatex -file-line-error %s' % texfile
+    else:
+        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error %s > /dev/null' % texfile
 
     st = os.system(pdflatex_cmd)
 
@@ -137,6 +140,7 @@ def main():
     parser.add_argument('-c', dest='clean', action='store_true', help='clean all')
     parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
     parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
+    parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
 
     global args
     args = parser.parse_args()
