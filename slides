@@ -3,30 +3,7 @@
 import sys, os
 
 usage = """Usage: slides.py name
-creates directory \"name\" in the current directory with the following files: slides.tex, style.tex, physics.tex and makefile."""
-
-makefile = """
-MAIN = slides
-
-EXTRA = $(MAIN).toc $(MAIN).aux $(MAIN).out $(MAIN).toc $(MAIN).log $(MAIN).snm $(MAIN).vrb $(MAIN).nav $(MAIN).dvi $(MAIN).ps
-
-all: pdf clean
-\t@echo "# $@ done"
-
-pdf: $(MAIN).tex
-\tlatex $(MAIN).tex
-\tlatex $(MAIN).tex
-\t@dvips $(MAIN).dvi
-\t@ps2pdf $(MAIN).ps
-
-clean:
-\trm -f $(EXTRA)
-
-cleanall:
-\t@rm -rf $(MAIN).dvi
-\t@rm -rf $(MAIN).ps
-\t@rm -rf $(MAIN).pdf
-"""
+creates directory \"name\" in the current directory with the following files: slides.tex, style.tex and physics.tex."""
 
 style = r"""
 % ----------
@@ -428,9 +405,6 @@ def main():
 
    # create all the necessary files inside
    os.chdir(project_name)
-
-   with open('makefile', 'wb') as fo:
-      fo.write(bytes(makefile, 'utf-8'))
 
    with open('physics.tex', 'wb') as fo:
       fo.write(bytes(physics, 'utf-8'))
