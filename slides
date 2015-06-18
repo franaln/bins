@@ -3,7 +3,7 @@
 import sys, os
 
 usage = """Usage: slides.py name
-creates directory \"name\" in the current directory with the following files: slides.tex, style.tex and physics.tex."""
+creates directory \"name\" in the current directory with the following files: slides.tex, style.tex, physics.tex."""
 
 style = r"""
 % ----------
