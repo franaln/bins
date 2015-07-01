@@ -10,6 +10,8 @@ from datetime import datetime
 def find_tex_file():
     tex_files = []
     for f in os.listdir('.'):
+        if f.startswith('.'):
+            continue
         if f.endswith('.tex'):
             tex_files.append(f)
 
@@ -108,6 +110,11 @@ def compile_latex(texfile):
         print('error')
         return 1
 
+    if args.bibtex:
+        bibtex_cmd = 'bibtex %s' % texfile[:-4]
+        os.system(bibtex_cmd)
+
+    os.system(pdflatex_cmd)
     os.system(pdflatex_cmd)
 
     colorize_latex_output(texfile)
@@ -148,6 +155,7 @@ def main():
     parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
     parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
+    parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
 
     global args
     args = parser.parse_args()
