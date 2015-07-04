@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import os
 import re
@@ -10,6 +10,8 @@ from datetime import datetime
 def find_tex_file():
     tex_files = []
     for f in os.listdir('.'):
+        if f.startswith('.'):
+            continue
         if f.endswith('.tex'):
             tex_files.append(f)
 
@@ -79,11 +81,18 @@ def colorize_latex_output(texfile):
             print('\n'+ C_INFO + '==> ' + line.replace(').', '') + ', %i wanings, %i errors).' % (n_warning, n_error) + C_RESET)
         elif 'No pages of output' in line:
             print(C_INFO + line + C_RESET)
+        elif 'no output PDF file produced!' in line:
+            print(C_ERROR + line + C_RESET)
 
         if 'Underfull' in line or 'Overfull' in line or 'Warning:' in line:
             n_warning += 1
             if show_warnings:
                 print(C_WARNING + line + C_RESET)
+
+
+        if '*** (job aborted, no legal \end found)' in line:
+            print(C_ERROR + line + C_RESET)
+            n_error += 1
 
         le = line_error.match(line)
         if le:
@@ -103,6 +112,11 @@ def compile_latex(texfile):
         print('error')
         return 1
 
+    if args.bibtex:
+        bibtex_cmd = 'bibtex %s' % texfile[:-4]
+        os.system(bibtex_cmd)
+
+    os.system(pdflatex_cmd)
     os.system(pdflatex_cmd)
 
     if args.bibtex:
@@ -151,7 +165,7 @@ def main():
     parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
     parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
-    parser.add_argument('-b', dest='bibtex', action='store_true', help='run bibtex after compile')
+    parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
 
     global args
     args = parser.parse_args()
