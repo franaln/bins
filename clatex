@@ -17,10 +17,12 @@ def find_tex_file():
         return tex_files[0]
     else:
         for f in tex_files:
-            tex = open(f).read()
-            if r'\documentclass' in tex:
-                return f
-
+            try:
+                tex = open(f).read()
+                if r'\documentclass' in tex:
+                    return f
+            except:
+                continue
     return None
 
 def get_mtime(fname):
@@ -93,7 +95,7 @@ def compile_latex(texfile):
     if args.verbose:
         pdflatex_cmd = 'pdflatex -file-line-error %s' % texfile
     else:
-        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error %s > /dev/null' % texfile
+        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % texfile
 
     st = os.system(pdflatex_cmd)
 
@@ -103,7 +105,15 @@ def compile_latex(texfile):
 
     os.system(pdflatex_cmd)
 
+    if args.bibtex:
+        os.system('bibtex %s' % texfile[:-4])
+        os.system(pdflatex_cmd)
+        os.system(pdflatex_cmd)
+
     colorize_latex_output(texfile)
+
+
+
 
 def crop_pdf(pdffile):
 
@@ -141,6 +151,7 @@ def main():
     parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
     parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
+    parser.add_argument('-b', dest='bibtex', action='store_true', help='run bibtex after compile')
 
     global args
     args = parser.parse_args()
