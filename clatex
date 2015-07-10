@@ -60,6 +60,14 @@ C_ERROR   = '\033[0;31m'
 C_INFO    = '\033[0;32m'
 C_RESET   = '\033[0m'
 
+def bytes_to_human(num):
+    num = int(num)
+    for unit in ['','K','M','G','T','P','E','Z']:
+        if abs(num) < 1024.0:
+            return "%3.1f%sB" % (num, unit)
+        num /= 1024.0
+    return "%.1f%sB" % (num, 'Y')
+
 def colorize_latex_output(texfile):
 
     logfile = texfile.replace('.tex', '.log')
@@ -78,7 +86,15 @@ def colorize_latex_output(texfile):
     for i, line in enumerate(log):
 
         if 'Output written on' in line:
-            print('\n'+ C_INFO + '==> ' + line.replace(').', '') + ', %i wanings, %i errors).' % (n_warning, n_error) + C_RESET)
+            sline = line.split()
+
+            name = sline[3]
+            pages = sline[4][1:]
+            size = bytes_to_human(sline[6])
+
+            msg = '** Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name, pages, size, n_warning, n_error)
+            print(C_INFO + msg + C_RESET)
+
         elif 'No pages of output' in line:
             print(C_INFO + line + C_RESET)
         elif 'no output PDF file produced!' in line:
@@ -116,8 +132,9 @@ def compile_latex(texfile):
         bibtex_cmd = 'bibtex %s' % texfile[:-4]
         os.system(bibtex_cmd)
 
-    os.system(pdflatex_cmd)
-    os.system(pdflatex_cmd)
+    if not args.fast:
+        os.system(pdflatex_cmd)
+        os.system(pdflatex_cmd)
 
     if args.bibtex:
         os.system('bibtex %s' % texfile[:-4])
@@ -166,6 +183,7 @@ def main():
     parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
     parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
+    parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
 
     global args
     args = parser.parse_args()
