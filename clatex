@@ -117,10 +117,15 @@ def colorize_latex_output(texfile):
 
 def compile_latex(texfile):
 
-    if args.verbose:
-        pdflatex_cmd = 'pdflatex -file-line-error %s' % texfile
+    if args.only:
+        filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
     else:
-        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % texfile
+        filecmd = texfile
+
+    if args.verbose:
+        pdflatex_cmd = 'pdflatex -file-line-error %s' % filecmd
+    else:
+        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % filecmd
 
     st = os.system(pdflatex_cmd)
 
@@ -144,10 +149,7 @@ def compile_latex(texfile):
     colorize_latex_output(texfile)
 
 
-
-
 def crop_pdf(pdffile):
-
     os.system('pdfcrop {0} {1}'.format(tmp_pdf, pdf_path))
 
 
@@ -172,6 +174,7 @@ def clean_all(main_name):
         except FileNotFoundError:
             pass
 
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -184,6 +187,7 @@ def main():
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
     parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
+    parser.add_argument('-j', dest='only', default='', help='inlcude only')
 
     global args
     args = parser.parse_args()
@@ -204,7 +208,7 @@ def main():
         clean_all(main_name)
         return
 
-    if args.force:
+    if args.force or args.only:
         clean_all(main_name)
 
     need_compile = False
