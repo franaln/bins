@@ -1,3 +1,0 @@
-#! /usr/bin/env bash
-
-setsid setsid /opt/Viber/Viber.sh
