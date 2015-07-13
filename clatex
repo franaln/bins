@@ -149,8 +149,21 @@ def compile_latex(texfile):
     colorize_latex_output(texfile)
 
 
+def convert_image(fname):
+    iname = fname
+    oname = fname[:-4] + '.pdf'
+    cmd = 'convert %s %s' % (iname, oname)
+    os.system(cmd)
+
+
 def crop_pdf(pdffile):
     os.system('pdfcrop {0} {1}'.format(tmp_pdf, pdf_path))
+
+def clean(fname):
+    try:
+        os.unlink(fname)
+    except FileNotFoundError:
+        pass
 
 
 def clean_all(main_name):
@@ -169,10 +182,7 @@ def clean_all(main_name):
         ]
 
     for f in to_rm:
-        try:
-            os.unlink(f)
-        except FileNotFoundError:
-            pass
+        clean(f)
 
 
 def main():
@@ -188,6 +198,8 @@ def main():
     parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only', default='', help='inlcude only')
+
+    parser.add_argument('--convert', default='', help='convert image(s) to .pdf')
 
     global args
     args = parser.parse_args()
@@ -207,6 +219,10 @@ def main():
     if args.clean:
         clean_all(main_name)
         return
+
+    # if args.convert:
+    #     if os.path.isdir(args.convert):
+    #         for d in os.listdir()
 
     if args.force or args.only:
         clean_all(main_name)
@@ -233,6 +249,10 @@ def main():
         compile_latex(main_tex)
     else:
         print(C_INFO + 'nothing to be done' + C_RESET)
+
+    if args.only:
+        for f in args.only.split(','):
+            clean(f+'.aux')
 
     if args.open:
         os.system('open %s' % main_pdf)
