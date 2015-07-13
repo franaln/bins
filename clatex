@@ -115,6 +115,7 @@ def colorize_latex_output(texfile):
             print(C_ERROR + '%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]) + C_RESET)
             n_error += 1
 
+
 def compile_latex(texfile):
 
     if args.only:
@@ -158,6 +159,7 @@ def convert_image(fname):
 
 def crop_pdf(pdffile):
     os.system('pdfcrop {0} {1}'.format(tmp_pdf, pdf_path))
+
 
 def clean(fname):
     try:
@@ -256,6 +258,7 @@ def main():
 
     if args.open:
         os.system('open %s' % main_pdf)
+
 
 if __name__ == '__main__':
     main()
