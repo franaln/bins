@@ -68,9 +68,7 @@ def bytes_to_human(num):
         num /= 1024.0
     return "%.1f%sB" % (num, 'Y')
 
-def colorize_latex_output(texfile):
-
-    logfile = texfile.replace('.tex', '.log')
+def colorize_latex_output(logfile):
 
     try:
         enc='iso-8859-15'
@@ -92,7 +90,7 @@ def colorize_latex_output(texfile):
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = '** Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name, pages, size, n_warning, n_error)
+            msg = '** Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
             print(C_INFO + msg + C_RESET)
 
         elif 'No pages of output' in line:
@@ -105,7 +103,6 @@ def colorize_latex_output(texfile):
             if show_warnings:
                 print(C_WARNING + line + C_RESET)
 
-
         if '*** (job aborted, no legal \end found)' in line:
             print(C_ERROR + line + C_RESET)
             n_error += 1
@@ -116,7 +113,11 @@ def colorize_latex_output(texfile):
             n_error += 1
 
 
-def compile_latex(texfile):
+def compile_latex(name):
+
+    texfile = name + '.tex'
+
+    os.system('mkdir -p .clatex')
 
     if args.only:
         filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
@@ -124,9 +125,9 @@ def compile_latex(texfile):
         filecmd = texfile
 
     if args.verbose:
-        pdflatex_cmd = 'pdflatex -file-line-error %s' % filecmd
+        pdflatex_cmd = 'pdflatex -output-directory=.clatex -file-line-error %s' % filecmd
     else:
-        pdflatex_cmd = 'pdflatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % filecmd
+        pdflatex_cmd = 'pdflatex -output-directory=.clatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % filecmd
 
     st = os.system(pdflatex_cmd)
 
@@ -135,7 +136,7 @@ def compile_latex(texfile):
         return 1
 
     if args.bibtex:
-        bibtex_cmd = 'bibtex %s' % texfile[:-4]
+        bibtex_cmd = 'bibtex %s' % name
         os.system(bibtex_cmd)
 
     if not args.fast:
@@ -143,11 +144,13 @@ def compile_latex(texfile):
         os.system(pdflatex_cmd)
 
     if args.bibtex:
-        os.system('bibtex %s' % texfile[:-4])
+        os.system(bibtex_cmd)
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
-    colorize_latex_output(texfile)
+    os.system('cp .clatex/%s.pdf .' % name)
+
+    colorize_latex_output('.clatex/%s.log' % name)
 
 
 def convert_image(fname):
@@ -201,7 +204,7 @@ def main():
     parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only', default='', help='inlcude only')
 
-    parser.add_argument('--convert', default='', help='convert image(s) to .pdf')
+    #parser.add_argument('--convert', default='', help='convert image(s) to .pdf')
 
     global args
     args = parser.parse_args()
@@ -248,7 +251,7 @@ def main():
                     break
 
     if need_compile:
-        compile_latex(main_tex)
+        compile_latex(main_name)
     else:
         print(C_INFO + 'nothing to be done' + C_RESET)
 
