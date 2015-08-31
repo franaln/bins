@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import shutil
 import argparse
 import subprocess as sp
 from datetime import datetime
@@ -169,25 +170,13 @@ def clean(fname):
         os.unlink(fname)
     except FileNotFoundError:
         pass
+    except IsADirectoryError:
+        shutil.rmtree(fname)
 
 
 def clean_all(main_name):
-
-    to_rm = [
-        main_name+'.toc',
-        main_name+'.aux',
-        main_name+'.out',
-        main_name+'.log',
-        main_name+'.snm',
-        main_name+'.vrb',
-        main_name+'.nav',
-        main_name+'.dvi',
-        main_name+'.ps',
-        main_name+'.pdf',
-        ]
-
-    for f in to_rm:
-        clean(f)
+    clean('.clatex')
+    clean(main_name+'.pdf')
 
 
 def main():
@@ -257,7 +246,7 @@ def main():
 
     if args.only:
         for f in args.only.split(','):
-            clean(f+'.aux')
+            clean('.clatex/'+f+'.aux')
 
     if args.open:
         os.system('open %s' % main_pdf)
