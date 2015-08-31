@@ -184,6 +184,44 @@ def clean_all(main_name):
     clean('.clatex')
 
 
+def slides_from_images():
+
+    header = r"""
+\documentclass[center,10pt,cm]{beamer}
+
+% basic style
+\renewcommand\familydefault{\rmdefault}
+\setbeamercolor*{frametitle}{bg=white,fg=black}
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+\centering
+
+   """
+
+    footer = r"""
+
+\end{document}
+"""
+    body = ""
+    for img in sorted(os.listdir('.')):
+
+        if not img.endswith('.pdf'):
+            continue
+
+        title = img[:-4].replace('_', '\_')
+
+        body += r"""
+\begin{frame}{%s}
+    \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
+\end{frame}
+""" % (title, img)
+
+    return header + body + footer
+
+
+
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -210,7 +248,13 @@ def main():
 
     if main_tex is None or not main_tex.endswith('.tex'):
         parser.print_usage()
-        return 1
+
+        with open('slides.tex', 'w+') as f:
+            tex = slides_from_images()
+            f.write(tex)
+
+        main_tex = 'slides.tex'
+        #return 1
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
