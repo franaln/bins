@@ -28,8 +28,10 @@ def find_tex_file():
                 continue
     return None
 
+
 def get_mtime(fname):
     return os.path.getmtime(fname)
+
 
 def get_dependence(fname):
     dependence = []
@@ -55,6 +57,7 @@ def get_dependence(fname):
 
     return dependence
 
+
 # Colorize LaTeX output.
 C_WARNING = '\033[93m'
 C_ERROR   = '\033[0;31m'
@@ -68,6 +71,7 @@ def bytes_to_human(num):
             return "%3.1f%sB" % (num, unit)
         num /= 1024.0
     return "%.1f%sB" % (num, 'Y')
+
 
 def colorize_latex_output(logfile):
 
@@ -175,8 +179,45 @@ def clean(fname):
 
 
 def clean_all(main_name):
-    clean('.clatex')
     clean(main_name+'.pdf')
+    clean('.clatex')
+
+
+def slides_from_images():
+
+    header = r"""
+\documentclass[center,10pt,cm]{beamer}
+
+% basic style
+\renewcommand\familydefault{\rmdefault}
+\setbeamercolor*{frametitle}{bg=white,fg=black}
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+\centering
+
+   """
+
+    footer = r"""
+
+\end{document}
+"""
+    body = ""
+    for img in sorted(os.listdir('.')):
+
+        if not img.endswith('.pdf'):
+            continue
+
+        title = img[:-4].replace('_', '\_')
+
+        body += r"""
+\begin{frame}{%s}
+    \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
+\end{frame}
+""" % (title, img)
+
+    return header + body + footer
+
 
 
 def main():
@@ -205,7 +246,13 @@ def main():
 
     if main_tex is None or not main_tex.endswith('.tex'):
         parser.print_usage()
-        return 1
+
+        with open('slides.tex', 'w+') as f:
+            tex = slides_from_images()
+            f.write(tex)
+
+        main_tex = 'slides.tex'
+        #return 1
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
@@ -233,7 +280,6 @@ def main():
             need_compile = True
         else:
             for dep in get_dependence(main_tex):
-
                 dep_time = datetime.fromtimestamp(get_mtime(dep))
                 if (main_pdf_time - dep_time).total_seconds() < 0:
                     need_compile = True
