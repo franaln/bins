@@ -140,20 +140,17 @@ def compile_latex(name):
         print('error')
         return 1
 
-    if args.bibtex:
-        bibtex_cmd = 'bibtex %s' % name
-        os.system(bibtex_cmd)
-
     if not args.fast:
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
     if args.bibtex:
+        bibtex_cmd = 'bibtex %s' % name
         os.system(bibtex_cmd)
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
-    os.system('cp .clatex/%s.pdf .' % name)
+    os.system('cp .clatex/%s.pdf %s.pdf' % (name, name))
 
     colorize_latex_output('.clatex/%s.log' % name)
 
@@ -245,14 +242,18 @@ def main():
         main_tex = find_tex_file()
 
     if main_tex is None or not main_tex.endswith('.tex'):
-        parser.print_usage()
 
+        if not os.listdir('.'):
+            parse_args.print_usage()
+            return 1
+
+        # try to create slides from pdf images
         with open('slides.tex', 'w+') as f:
             tex = slides_from_images()
             f.write(tex)
 
         main_tex = 'slides.tex'
-        #return 1
+
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
@@ -267,6 +268,10 @@ def main():
 
     if args.force or args.only:
         clean_all(main_name)
+
+    # if args.only:
+    #     for f in args.only.split(','):
+    #         clean('.clatex/'+f+'.aux')
 
     need_compile = False
     if not os.path.isfile(main_pdf):
@@ -289,10 +294,6 @@ def main():
         compile_latex(main_name)
     else:
         print(C_INFO + 'nothing to be done' + C_RESET)
-
-    if args.only:
-        for f in args.only.split(','):
-            clean('.clatex/'+f+'.aux')
 
     if args.open:
         os.system('open %s' % main_pdf)
