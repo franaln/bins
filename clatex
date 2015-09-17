@@ -122,6 +122,8 @@ def compile_latex(name):
 
     texfile = name + '.tex'
 
+    print('Compiling %s' % texfile)
+
     os.system('mkdir -p .clatex')
 
     if args.only:
@@ -141,17 +143,17 @@ def compile_latex(name):
         return 1
 
     if args.bibtex:
-        bibtex_cmd = 'bibtex %s' % name
+        pwd = os.getcwd()
+        os.chdir('.clatex')
+        bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
+        os.chdir(pwd)
+
 
     if not args.fast:
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
-    if args.bibtex:
-        os.system(bibtex_cmd)
-        os.system(pdflatex_cmd)
-        os.system(pdflatex_cmd)
 
     os.system('cp .clatex/%s.pdf .' % name)
 
