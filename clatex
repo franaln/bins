@@ -37,23 +37,24 @@ def get_dependence(fname):
     dependence = []
     for line in open(fname):
         line = line.replace('\n', '')
-        try:
-            dep = re.match(r'\\input{(.*)}', line).groups()[0]
-            if dep is not None:
-                if not '.' in dep:
-                    dep += '.tex'
-                dependence.append(dep)
-                continue
 
-            dep = re.match(r'\\include{(.*)}', line).groups()[0]
-            if dep is not None:
-                if not '.' in dep:
-                    dep += '.tex'
-                dependence.append(dep)
-                continue
+        dep = re.match(r'\\input{(.*)}', line)
+        if dep is not None:
+            dep = dep.groups()[0]
 
-        except:
-            pass
+            if not '.' in dep:
+                dep += '.tex'
+            dependence.append(dep)
+            continue
+
+        dep = re.match(r'\\include{(.*)}', line)
+        if dep is not None:
+            dep = dep.groups()[0]
+            print(dep)
+            if not '.' in dep:
+                dep += '.tex'
+            dependence.append(dep)
+            continue
 
     return dependence
 
@@ -218,6 +219,9 @@ def slides_from_images():
 \end{frame}
 """ % (title, img)
 
+    if not body:
+        return None
+
     return header + body + footer
 
 
@@ -236,8 +240,6 @@ def main():
     parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only', default='', help='inlcude only')
 
-    #parser.add_argument('--convert', default='', help='convert image(s) to .pdf')
-
     global args
     args = parser.parse_args()
 
@@ -247,14 +249,18 @@ def main():
         main_tex = find_tex_file()
 
     if main_tex is None or not main_tex.endswith('.tex'):
-        parser.print_usage()
+
+        tex = slides_from_images()
+
+        if tex is None:
+            parser.print_usage()
+            return 1
 
         with open('slides.tex', 'w+') as f:
-            tex = slides_from_images()
             f.write(tex)
 
         main_tex = 'slides.tex'
-        #return 1
+
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
@@ -262,10 +268,6 @@ def main():
     if args.clean:
         clean_all(main_name)
         return
-
-    # if args.convert:
-    #     if os.path.isdir(args.convert):
-    #         for d in os.listdir()
 
     if args.force or args.only:
         clean_all(main_name)
@@ -283,6 +285,7 @@ def main():
         else:
             for dep in get_dependence(main_tex):
                 dep_time = datetime.fromtimestamp(get_mtime(dep))
+                print(main_pdf_time, dep, dep_time)
                 if (main_pdf_time - dep_time).total_seconds() < 0:
                     need_compile = True
                     break
@@ -292,9 +295,9 @@ def main():
     else:
         print(C_INFO + 'nothing to be done' + C_RESET)
 
-    if args.only:
-        for f in args.only.split(','):
-            clean('.clatex/'+f+'.aux')
+    # if args.only:
+    #     for f in args.only.split(','):
+    #         clean('.clatex/'+f+'.aux')
 
     if args.open:
         os.system('open %s' % main_pdf)
