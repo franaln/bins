@@ -50,7 +50,7 @@ def get_dependence(fname):
         dep = re.match(r'\\include{(.*)}', line)
         if dep is not None:
             dep = dep.groups()[0]
-            print(dep)
+
             if not '.' in dep:
                 dep += '.tex'
             dependence.append(dep)
@@ -96,7 +96,7 @@ def colorize_latex_output(logfile):
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = '** Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
+            msg = '-- Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
             print(C_INFO + msg + C_RESET)
 
         elif 'No pages of output' in line:
@@ -123,8 +123,6 @@ def compile_latex(name):
 
     texfile = name + '.tex'
 
-    print('Compiling %s' % texfile)
-
     os.system('mkdir -p .clatex')
 
     if args.only:
@@ -139,8 +137,8 @@ def compile_latex(name):
 
     st = os.system(pdflatex_cmd)
 
-    if st == 1:
-        print('error')
+    if st == 1 or not os.path.isfile('.clatex/%s.pdf' % name):
+        print(C_RED + 'Compile error' + C_RESET)
         return 1
 
     if args.bibtex:
@@ -292,7 +290,7 @@ def main():
         else:
             for dep in get_dependence(main_tex):
                 dep_time = datetime.fromtimestamp(get_mtime(dep))
-                print(main_pdf_time, dep, dep_time)
+
                 if (main_pdf_time - dep_time).total_seconds() < 0:
                     need_compile = True
                     break
