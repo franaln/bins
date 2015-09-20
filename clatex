@@ -138,7 +138,7 @@ def compile_latex(name):
     st = os.system(pdflatex_cmd)
 
     if st == 1 or not os.path.isfile('.clatex/%s.pdf' % name):
-        print(C_RED + 'Compile error' + C_RESET)
+        print(C_ERROR + 'Compile error' + C_RESET)
         return 1
 
     if args.bibtex:
