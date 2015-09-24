@@ -94,7 +94,7 @@ def colorize_latex_output(logfile):
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = '** Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
+            msg = '-- Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
             print(C_INFO + msg + C_RESET)
 
         elif 'No pages of output' in line:
@@ -135,8 +135,8 @@ def compile_latex(name):
 
     st = os.system(pdflatex_cmd)
 
-    if st == 1:
-        print(C_ERROR + 'compile error' + C_RESET)
+    if st == 1 or not os.path.isfile('.clatex/%s.pdf' % name):
+        print(C_ERROR + 'Compile error' + C_RESET)
         return 1
 
     if args.bibtex:
@@ -152,8 +152,7 @@ def compile_latex(name):
 
     colorize_latex_output('.clatex/%s.log' % name)
 
-    os.system('cp .clatex/%s.pdf .' % name)
-
+    os.system('cp .clatex/%s.pdf %s.pdf' % (name, name))
 
 
 def convert_image(fname):
@@ -246,6 +245,11 @@ def main():
 
     if main_tex is None or not main_tex.endswith('.tex'):
 
+        if not os.listdir('.'):
+            parse_args.print_usage()
+            return 1
+
+        # try to create slides from pdf images
         tex = slides_from_images()
 
         if tex is None:
@@ -267,6 +271,10 @@ def main():
 
     if args.force or args.only:
         clean_all(main_name)
+
+    # if args.only:
+    #     for f in args.only.split(','):
+    #         clean('.clatex/'+f+'.aux')
 
     need_compile = False
     if not os.path.isfile(main_pdf):
@@ -290,10 +298,6 @@ def main():
         compile_latex(main_name)
     else:
         print(C_INFO + 'nothing to be done' + C_RESET)
-
-    # if args.only:
-    #     for f in args.only.split(','):
-    #         clean('.clatex/'+f+'.aux')
 
     if args.open:
         os.system('open %s' % main_pdf)
