@@ -41,7 +41,6 @@ def get_dependence(fname):
         dep = re.match(r'\\input{(.*)}', line)
         if dep is not None:
             dep = dep.groups()[0]
-
             if not '.' in dep:
                 dep += '.tex'
             dependence.append(dep)
@@ -50,7 +49,6 @@ def get_dependence(fname):
         dep = re.match(r'\\include{(.*)}', line)
         if dep is not None:
             dep = dep.groups()[0]
-            print(dep)
             if not '.' in dep:
                 dep += '.tex'
             dependence.append(dep)
@@ -123,8 +121,6 @@ def compile_latex(name):
 
     texfile = name + '.tex'
 
-    print('Compiling %s' % texfile)
-
     os.system('mkdir -p .clatex')
 
     if args.only:
@@ -140,7 +136,7 @@ def compile_latex(name):
     st = os.system(pdflatex_cmd)
 
     if st == 1:
-        print('error')
+        print(C_ERROR + 'compile error' + C_RESET)
         return 1
 
     if args.bibtex:
@@ -150,15 +146,14 @@ def compile_latex(name):
         os.system(bibtex_cmd)
         os.chdir(pwd)
 
-
     if not args.fast:
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
+    colorize_latex_output('.clatex/%s.log' % name)
 
     os.system('cp .clatex/%s.pdf .' % name)
 
-    colorize_latex_output('.clatex/%s.log' % name)
 
 
 def convert_image(fname):
@@ -205,6 +200,7 @@ def slides_from_images():
 
 \end{document}
 """
+
     body = ""
     for img in sorted(os.listdir('.')):
 
@@ -231,14 +227,14 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('texfile', nargs='?', help='')
-    parser.add_argument('-f', dest='force', action='store_true', help='force compilation')
-    parser.add_argument('-c', dest='clean', action='store_true', help='clean all')
-    parser.add_argument('-g', dest='debug', action='store_true', help='show warnings')
-    parser.add_argument('-o', dest='open', action='store_true', help='open pdf')
+    parser.add_argument('-f', dest='force',   action='store_true', help='force compilation')
+    parser.add_argument('-c', dest='clean',   action='store_true', help='clean all')
+    parser.add_argument('-g', dest='debug',   action='store_true', help='show warnings')
+    parser.add_argument('-o', dest='open',    action='store_true', help='open pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
-    parser.add_argument('-b', dest='bibtex', action='store_true', help='compile bibliography using bibtex')
-    parser.add_argument('-a', dest='fast', action='store_true', help='compile only once')
-    parser.add_argument('-j', dest='only', default='', help='inlcude only')
+    parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
+    parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
+    parser.add_argument('-j', dest='only',     default='', help='include only')
 
     global args
     args = parser.parse_args()
@@ -285,10 +281,10 @@ def main():
         else:
             for dep in get_dependence(main_tex):
                 dep_time = datetime.fromtimestamp(get_mtime(dep))
-                print(main_pdf_time, dep, dep_time)
                 if (main_pdf_time - dep_time).total_seconds() < 0:
                     need_compile = True
                     break
+
 
     if need_compile:
         compile_latex(main_name)
