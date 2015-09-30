@@ -94,7 +94,7 @@ def colorize_latex_output(logfile):
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = '-- Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
+            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
             print(C_INFO + msg + C_RESET)
 
         elif 'No pages of output' in line:
@@ -140,11 +140,11 @@ def compile_latex(name):
         return 1
 
     if args.bibtex:
-        pwd = os.getcwd()
-        os.chdir('.clatex')
+        #pwd = os.getcwd()
+        #os.chdir('.clatex')
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
-        os.chdir(pwd)
+        #os.chdir(pwd)
 
     if not args.fast:
         os.system(pdflatex_cmd)
@@ -233,7 +233,7 @@ def main():
     parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
-    parser.add_argument('-j', dest='only',     default='', help='include only')
+    parser.add_argument('-j', dest='only',    default='', help='include only')
 
     global args
     args = parser.parse_args()
