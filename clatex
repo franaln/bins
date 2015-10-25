@@ -7,6 +7,7 @@ import shutil
 import argparse
 import subprocess as sp
 from datetime import datetime
+import threading
 
 def find_tex_file():
     tex_files = []
@@ -56,6 +57,10 @@ def get_dependence(fname):
 
     return dependence
 
+
+def check_tikz_picture(fname):
+    text = open(fname).read()
+    return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
 
 # Colorize LaTeX output.
 C_WARNING = '\033[93m'
@@ -117,6 +122,7 @@ def colorize_latex_output(logfile):
             n_error += 1
 
 
+
 def compile_latex(name):
 
     texfile = name + '.tex'
@@ -125,6 +131,15 @@ def compile_latex(name):
 
     if args.only:
         filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
+    elif args.tikz:
+
+        tmp_tex = '/tmp/' + name.replace('.tex', '') + '.tex'
+
+        with open(tmp_tex, 'wt', encoding='utf-8') as of:
+            of.write(get_tikz_tex(texfile))
+
+        filecmd = tmp_tex
+
     else:
         filecmd = texfile
 
@@ -153,6 +168,33 @@ def compile_latex(name):
     colorize_latex_output('.clatex/%s.log' % name)
 
     os.system('cp .clatex/%s.pdf %s.pdf' % (name, name))
+
+
+def get_tikz_tex(texfile):
+
+    template_before = r"""\documentclass{article}
+\usepackage{mathptmx}
+\usepackage{tikz}
+\usetikzlibrary{patterns}
+\usepackage{xifthen}
+
+%\usepackage{color}
+\usepackage[active,pdftex,tightpage]{preview}
+\PreviewEnvironment[]{tikzpicture}
+\PreviewEnvironment[]{pgfpicture}
+\DeclareSymbolFont{symbolsb}{OMS}{cmsy}{m}{n}
+\SetSymbolFont{symbolsb}{bold}{OMS}{cmsy}{b}{n}
+\DeclareSymbolFontAlphabet{\mathcal}{symbolsb}
+\begin{document}
+"""
+
+    template_after = r"""
+\end{document}
+"""
+
+    tikzplot = open(texfile, 'r').read()
+
+    return template_before + tikzplot + template_after
 
 
 def convert_image(fname):
@@ -235,6 +277,9 @@ def main():
     parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only',     default='', help='include only')
 
+    parser.add_argument('--tikz', action='store_true', help='is a tikz picture')
+
+
     global args
     args = parser.parse_args()
 
@@ -262,6 +307,11 @@ def main():
         main_tex = 'slides.tex'
 
 
+    # tikz file
+    # if args.tikz: #check_tikz_picture(main_tex):
+    #     create_tikz_file(main_name)
+    #     main_tex = main_
+
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
 
@@ -271,10 +321,6 @@ def main():
 
     if args.force or args.only:
         clean_all(main_name)
-
-    # if args.only:
-    #     for f in args.only.split(','):
-    #         clean('.clatex/'+f+'.aux')
 
     need_compile = False
     if not os.path.isfile(main_pdf):
