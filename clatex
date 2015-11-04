@@ -127,7 +127,7 @@ def compile_latex(name):
 
     texfile = name + '.tex'
 
-    os.system('mkdir -p .clatex')
+    os.system('mkdir -p %s' % clatex_dir)
 
     if args.only:
         filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
@@ -144,30 +144,27 @@ def compile_latex(name):
         filecmd = texfile
 
     if args.verbose:
-        pdflatex_cmd = 'pdflatex -output-directory=.clatex -file-line-error %s' % filecmd
+        pdflatex_cmd = 'pdflatex -output-directory=%s -file-line-error %s' % (clatex_dir, filecmd)
     else:
-        pdflatex_cmd = 'pdflatex -output-directory=.clatex -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % filecmd
+        pdflatex_cmd = 'pdflatex -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (clatex_dir, filecmd)
 
     st = os.system(pdflatex_cmd)
 
-    if st == 1 or not os.path.isfile('.clatex/%s.pdf' % name):
+    if st == 1 or not os.path.isfile(clatex_dir+'/%s.pdf' % name):
         print(C_ERROR + 'Compile error' + C_RESET)
         return 1
 
     if args.bibtex:
-        #pwd = os.getcwd()
-        #os.chdir('.clatex')
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
-        #os.chdir(pwd)
 
     if not args.fast:
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
-    colorize_latex_output('.clatex/%s.log' % name)
+    colorize_latex_output('%s/%s.log' % (clatex_dir, name))
 
-    os.system('cp .clatex/%s.pdf %s.pdf' % (name, name))
+    os.system('cp %s/%s.pdf %s.pdf' % (clatex_dir, name, name))
 
 
 def get_tikz_tex(texfile):
@@ -219,7 +216,7 @@ def clean(fname):
 
 def clean_all(main_name):
     clean(main_name+'.pdf')
-    clean('.clatex')
+    clean(clatex_dir)
 
 
 def slides_from_images():
@@ -228,9 +225,10 @@ def slides_from_images():
 \documentclass[center,10pt,cm]{beamer}
 
 % basic style
-\renewcommand\familydefault{\rmdefault}
-\setbeamercolor*{frametitle}{bg=white,fg=black}
-\setbeamertemplate{navigation symbols}{}
+\usetheme{mini}
+% \renewcommand\familydefault{\rmdefault}
+% \setbeamercolor*{frametitle}{bg=white,fg=black}
+% \setbeamertemplate{navigation symbols}{}
 
 \begin{document}
 \centering
@@ -276,6 +274,7 @@ def main():
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only',    default='', help='include only')
+    parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp. not implemented.')
 
     parser.add_argument('--tikz', action='store_true', help='is a tikz picture')
 
@@ -314,6 +313,10 @@ def main():
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
+
+    global clatex_dir
+    clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
+
 
     if args.clean:
         clean_all(main_name)
