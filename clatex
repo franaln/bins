@@ -225,10 +225,10 @@ def slides_from_images():
 \documentclass[center,10pt,cm]{beamer}
 
 % basic style
-\usetheme{mini}
-% \renewcommand\familydefault{\rmdefault}
-% \setbeamercolor*{frametitle}{bg=white,fg=black}
-% \setbeamertemplate{navigation symbols}{}
+%\usetheme{mini}
+\renewcommand\familydefault{\rmdefault}
+\setbeamercolor*{frametitle}{bg=white,fg=black}
+\setbeamertemplate{navigation symbols}{}
 
 \begin{document}
 \centering
