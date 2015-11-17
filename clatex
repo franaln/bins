@@ -148,6 +148,13 @@ def compile_latex(name):
     else:
         pdflatex_cmd = 'pdflatex -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (clatex_dir, filecmd)
 
+    if os.path.isdir('images'):
+        if 'TEXINPUTS' in os.environ:
+            os.environ['TEXINPUTS'] = './images//:' + os.environ['TEXINPUTS']
+        else:
+            os.environ['TEXINPUTS'] = './images//'
+
+
     st = os.system(pdflatex_cmd)
 
     if st == 1 or not os.path.isfile(clatex_dir+'/%s.pdf' % name):
