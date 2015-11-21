@@ -123,23 +123,15 @@ def colorize_latex_output(logfile):
 
 
 
-def compile_latex(name):
+def compile_latex(texfile):
 
-    texfile = name + '.tex'
+    name = os.path.basename(texfile)[:-4]
+    pdf_file = clatex_dir+'/%s.pdf' % name
 
     os.system('mkdir -p %s' % clatex_dir)
 
     if args.only:
         filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
-    elif args.tikz:
-
-        tmp_tex = '/tmp/' + name.replace('.tex', '') + '.tex'
-
-        with open(tmp_tex, 'wt', encoding='utf-8') as of:
-            of.write(get_tikz_tex(texfile))
-
-        filecmd = tmp_tex
-
     else:
         filecmd = texfile
 
@@ -149,29 +141,29 @@ def compile_latex(name):
         pdflatex_cmd = 'pdflatex -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (clatex_dir, filecmd)
 
     if os.path.isdir('images'):
-        if 'TEXINPUTS' in os.environ:
-            os.environ['TEXINPUTS'] = './images//:' + os.environ['TEXINPUTS']
-        else:
-            os.environ['TEXINPUTS'] = './images//'
-
+        os.environ['TEXINPUTS'] = './/:./images//:'
 
     st = os.system(pdflatex_cmd)
 
-    if st == 1 or not os.path.isfile(clatex_dir+'/%s.pdf' % name):
+    if st == 1 or not os.path.isfile(pdf_file):
         print(C_ERROR + 'Compile error' + C_RESET)
-        return 1
 
-    if args.bibtex:
+    if st == 0 and args.bibtex:
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
 
-    if not args.fast:
+    if st == 0 and not args.fast:
         os.system(pdflatex_cmd)
         os.system(pdflatex_cmd)
 
-    colorize_latex_output('%s/%s.log' % (clatex_dir, name))
+    logfile = '%s/%s.log' % (clatex_dir, name)
+    if os.path.isfile(logfile):
+        colorize_latex_output(logfile)
 
-    os.system('cp %s/%s.pdf %s.pdf' % (clatex_dir, name, name))
+    if os.path.isfile(pdf_file):
+        os.system('cp %s %s.pdf' % (pdf_file, name))
+
+    return st
 
 
 def get_tikz_tex(texfile):
@@ -283,7 +275,9 @@ def main():
     parser.add_argument('-j', dest='only',    default='', help='include only')
     parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp. not implemented.')
 
-    parser.add_argument('--tikz', action='store_true', help='is a tikz picture')
+    parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
+    parser.add_argument('--pdf', action='store_true', help='merge pdf images in slides')
+    parser.add_argument('--table', action='store_true', help='compile table')
 
 
     global args
@@ -291,10 +285,11 @@ def main():
 
     if args.texfile is not None:
         main_tex = args.texfile
+        main_name = main_tex.replace('.tex', '')
     else:
         main_tex = find_tex_file()
 
-    if main_tex is None or not main_tex.endswith('.tex'):
+    if args.pdf: ##main_tex is None or not main_tex.endswith('.tex'):
 
         if not os.listdir('.'):
             parse_args.print_usage()
@@ -312,11 +307,32 @@ def main():
 
         main_tex = 'slides.tex'
 
+    elif args.tikz:
 
-    # tikz file
-    # if args.tikz: #check_tikz_picture(main_tex):
-    #     create_tikz_file(main_name)
-    #     main_tex = main_
+        tmp_tex = '/tmp/' + main_name.replace('.tex', '') + '.tex'
+
+        with open(tmp_tex, 'wt', encoding='utf-8') as of:
+            of.write(get_tikz_tex(texfile))
+
+        main_tex = tmp_tex
+
+    elif args.table:
+
+        tmp_tex = '/tmp/' + main_name.replace('.tex', '') + '.tex'
+
+        tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \begin{document} \pagestyle{empty}'
+        tex += '\n'
+        tex += open(main_tex).read()
+        tex += '\n\\end{document}'
+
+        with open(tmp_tex, 'wt', encoding='utf-8') as of:
+            of.write(tex)
+
+        main_tex = tmp_tex
+
+
+    if main_tex is None:
+        return 1
 
     main_name = main_tex.replace('.tex', '')
     main_pdf = main_name + '.pdf'
@@ -351,11 +367,12 @@ def main():
 
 
     if need_compile:
-        compile_latex(main_name)
+        st = compile_latex(main_tex)
     else:
+        st = 0
         print(C_INFO + 'nothing to be done' + C_RESET)
 
-    if args.open:
+    if args.open and st == 0:
         os.system('open %s' % main_pdf)
 
 
