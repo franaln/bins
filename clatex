@@ -8,6 +8,21 @@ import argparse
 import subprocess
 from datetime import datetime
 
+C_WARNING = '\033[93m'
+C_ERROR   = '\033[0;31m'
+C_INFO    = '\033[0;32m'
+C_RESET   = '\033[0m'
+
+def print_info(msg):
+    print(C_INFO + msg + C_RESET)
+
+def print_warning(msg):
+    print(C_WARNING + msg + C_RESET)
+
+def print_error(msg):
+    print(C_ERROR + msg + C_RESET)
+
+
 def find_tex_file():
     tex_files = []
     for f in os.listdir('.'):
@@ -32,7 +47,8 @@ def find_tex_file():
         return None
 
     if len(main) > 1:
-        print('more than one main file was found')
+        print_error('More than one main file was found')
+        return None
     else:
         return main[0]
 
@@ -70,10 +86,6 @@ def check_tikz_picture(fname):
     return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
 
 # Colorize LaTeX output.
-C_WARNING = '\033[93m'
-C_ERROR   = '\033[0;31m'
-C_INFO    = '\033[0;32m'
-C_RESET   = '\033[0m'
 
 def bytes_to_human(num):
     num = int(num)
@@ -108,31 +120,35 @@ def colorize_latex_output(logfile):
             size = bytes_to_human(sline[6])
 
             msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
-            print(C_INFO + msg + C_RESET)
+            print_info(msg)
 
         elif 'No pages of output' in line:
             compile_ok = False
-            print(C_INFO + line + C_RESET)
+            print_info(line)
 
         elif 'no output PDF file produced!' in line:
             compile_ok = False
-            print(C_ERROR + line + C_RESET)
+            print_error(line)
 
         if 'Underfull' in line or 'Overfull' in line or 'Warning:' in line:
             n_warning += 1
             if show_warnings:
-                print(C_WARNING + line + C_RESET)
+                print_warning(line)
 
         if '*** (job aborted, no legal \end found)' in line:
-            print(C_ERROR + line + C_RESET)
+            print_error(line)
             n_error += 1
 
         le = line_error.match(line)
         if le:
-            print(C_ERROR + '%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]) + C_RESET)
+            print_error('%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]))
             n_error += 1
 
     return compile_ok
+
+
+def colorize_bibtex_output(logfile):
+    pass
 
 
 def compile_latex(texfile):
@@ -163,12 +179,21 @@ def compile_latex(texfile):
         compile_ok = False
 
     if compile_ok and args.bibtex:
+        print_info('-- Running bibtex')
+        pwd = os.getcwd()
+
+        os.environ['TEXMFOUTPUT'] = clatex_dir+':'
+        os.environ['BIBINPUTS'] = pwd + ':'
+        os.environ['BSTINPUT'] = clatex_dir + ':'
+
+        os.chdir(clatex_dir)
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
+        os.chdir(pwd)
 
     if compile_ok and not args.fast:
-        os.system(pdflatex_cmd)
-        os.system(pdflatex_cmd)
+        subprocess.call(pdflatex_cmd, shell=True)
+        subprocess.call(pdflatex_cmd, shell=True)
 
     if compile_ok and os.path.isfile(pdf_file):
         os.system('cp %s %s.pdf' % (pdf_file, name))
@@ -176,7 +201,7 @@ def compile_latex(texfile):
     return compile_ok
 
 
-def get_tikz_tex(texfile):
+def create_tikz_tex(input_tex, output_tex):
 
     template_before = r"""\documentclass{article}
 \usepackage{mathptmx}
@@ -198,9 +223,24 @@ def get_tikz_tex(texfile):
 \end{document}
 """
 
-    tikzplot = open(texfile, 'r').read()
+    tikzplot = open(input_tex, 'r').read()
 
-    return template_before + tikzplot + template_after
+    with open(output_tex, 'wt', encoding='utf-8') as of:
+        of.write(template_before)
+        of.write(tikzplot)
+        of.write(template_after)
+
+
+def create_table_tex(input_tex, output_tex):
+
+    tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \begin{document} \pagestyle{empty}'
+    tex += '\n'
+    tex += open(input_tex).read()
+    tex += '\n\\end{document}'
+
+    with open(output_tex, 'wt', encoding='utf-8') as of:
+        of.write(tex)
+
 
 
 def convert_image(fname):
@@ -223,18 +263,12 @@ def clean(fname):
         shutil.rmtree(fname)
 
 
-def clean_all(main_name):
-    clean(main_name+'.pdf')
-    clean(clatex_dir)
-
-
 def slides_from_images():
 
     header = r"""
 \documentclass[center,10pt,cm]{beamer}
 
 % basic style
-%\usetheme{mini}
 \renewcommand\familydefault{\rmdefault}
 \setbeamercolor*{frametitle}{bg=white,fg=black}
 \setbeamertemplate{navigation symbols}{}
@@ -286,29 +320,54 @@ def main():
     parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp. not implemented.')
 
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
-    parser.add_argument('--pdf', action='store_true', help='merge pdf images in slides')
+    parser.add_argument('--plots', action='store_true', help='merge plots in slides')
     parser.add_argument('--table', action='store_true', help='compile table')
 
 
     global args
     args = parser.parse_args()
 
-    if args.texfile is not None:
-        main_tex = args.texfile
-        main_name = os.path.basename(main_tex)[:-4]
-        #main_name = main_tex.replace('.tex', '')
-    else:
-        main_tex = find_tex_file()
-
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
-    os.system('mkdir -p %s' % clatex_dir)
+
+    if args.clean:
+        clean(clatex_dir)
+        return 0
+
+    if args.force:
+        clean(clatex_dir)
+
+    # create clatex dir
+    subprocess.call('mkdir -p %s' % clatex_dir, shell=True)
 
 
-    if args.pdf: ##main_tex is None or not main_tex.endswith('.tex'):
+    main_tex = None
+    if args.texfile is not None:
+
+        main_tex = args.texfile
+        main_name = os.path.basename(main_tex)[:-4]
+
+        if args.tikz:
+
+            tmp_tex = clatex_dir + '/' + main_name + '.tex'
+
+            create_tikz_tex(main_tex, tmp_tex)
+
+            main_tex = tmp_tex
+
+        elif args.table:
+
+            tmp_tex = clatex_dir + '/' + main_name + '.tex'
+
+            create_table_tex(main_tex, tmp_tex)
+
+            main_tex = tmp_tex
+
+
+    if args.plots:
 
         if not os.listdir('.'):
-            parse_args.print_usage()
+            parser.print_usage()
             return 1
 
         # try to create slides from pdf images
@@ -318,50 +377,30 @@ def main():
             parser.print_usage()
             return 1
 
-        with open('plots.tex', 'w+') as f:
+        texfile = clatex_dir + '/plots.tex' if main_tex is None else main_tex
+
+        with open(texfile, 'w+') as f:
             f.write(tex)
 
-        main_tex = 'plots.tex'
-
-    elif args.tikz:
-
-        tmp_tex = clatex_dir + '/' + main_name + '.tex'
-
-        with open(tmp_tex, 'wt', encoding='utf-8') as of:
-            of.write(get_tikz_tex(main_tex))
-
-        main_tex = tmp_tex
-
-    elif args.table:
-
-        tmp_tex = clatex_dir + '/' + main_name + '.tex'
-
-        tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \begin{document} \pagestyle{empty}'
-        tex += '\n'
-        tex += open(main_tex).read()
-        tex += '\n\\end{document}'
-
-        with open(tmp_tex, 'wt', encoding='utf-8') as of:
-            of.write(tex)
-
-        main_tex = tmp_tex
+        main_tex = texfile
 
 
     if main_tex is None:
+        main_tex = find_tex_file()
+
+    if main_tex is None:
+        print_error('There is no tex to compile...')
         return 1
 
     main_name = os.path.basename(main_tex)[:-4]
     main_pdf = main_name + '.pdf'
 
-    if args.clean:
-        clean_all(main_name)
-        return
 
-    if args.force or args.only:
-        clean_all(main_name)
+    # Compile
+    print_info('Compiling %s -> %s' % (main_tex, main_pdf))
 
     need_compile = False
-    if not os.path.isfile(main_pdf):
+    if args.force or not os.path.isfile(main_pdf):
         need_compile = True
     else:
         main_pdf_time = datetime.fromtimestamp(get_mtime(main_pdf))
@@ -383,10 +422,10 @@ def main():
         if not compile_ok:
             return 1
     else:
-        print(C_INFO + 'nothing to be done' + C_RESET)
+        print_info('Nothing to be done')
 
     if args.open:
-        os.system('open %s' % main_pdf)
+        subprocess.call(['open', main_pdf])
 
 
 if __name__ == '__main__':
