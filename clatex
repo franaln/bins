@@ -8,10 +8,10 @@ import argparse
 import subprocess
 from datetime import datetime
 
-C_WARNING = '\033[93m'
-C_ERROR   = '\033[0;31m'
-C_INFO    = '\033[0;32m'
-C_RESET   = '\033[0m'
+C_WARNING = '' #'\033[93m'
+C_ERROR   = '' #'\033[0;31m'
+C_INFO    = '' #'\033[0;32m'
+C_RESET   = '' #'\033[0m'
 
 def print_info(msg):
     print(C_INFO + msg + C_RESET)
@@ -195,8 +195,16 @@ def compile_latex(texfile):
         subprocess.call(pdflatex_cmd, shell=True)
         subprocess.call(pdflatex_cmd, shell=True)
 
+
     if compile_ok and os.path.isfile(pdf_file):
-        os.system('cp %s %s.pdf' % (pdf_file, name))
+
+        pdf_file_final = '%s.pdf' % name
+
+        if args.table:
+            crop_pdf(pdf_file, pdf_file_final)
+        else:
+            os.system('cp %s %s' % (pdf_file, pdf_file_final))
+
 
     return compile_ok
 
@@ -242,7 +250,6 @@ def create_table_tex(input_tex, output_tex):
         of.write(tex)
 
 
-
 def convert_image(fname):
     iname = fname
     oname = fname[:-4] + '.pdf'
@@ -250,8 +257,8 @@ def convert_image(fname):
     os.system(cmd)
 
 
-def crop_pdf(pdffile):
-    os.system('pdfcrop {0} {1}'.format(tmp_pdf, pdf_path))
+def crop_pdf(input_pdf, output_pdf):
+    os.system('pdfcrop {0} {1} > /dev/null'.format(input_pdf, output_pdf))
 
 
 def clean(fname):
@@ -263,7 +270,7 @@ def clean(fname):
         shutil.rmtree(fname)
 
 
-def slides_from_images():
+def create_slides_from_plots(output_tex):
 
     header = r"""
 \documentclass[center,10pt,cm]{beamer}
@@ -284,6 +291,7 @@ def slides_from_images():
 """
 
     body = ""
+    counter = 0
     for img in sorted(os.listdir('.')):
 
         if not img.endswith('.pdf'):
@@ -296,12 +304,19 @@ def slides_from_images():
     \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
 \end{frame}
 """ % (title, img)
+        counter += 1
 
     if not body:
         return None
 
-    return header + body + footer
+    text = header + body + footer
 
+    with open(output_tex, 'w+') as f:
+        f.write(text)
+
+    print_info('Created slides "%s" with %i plots' % (output_tex, counter))
+
+    return output_tex
 
 
 def main():
@@ -366,23 +381,9 @@ def main():
 
     if args.plots:
 
-        if not os.listdir('.'):
-            parser.print_usage()
-            return 1
-
-        # try to create slides from pdf images
-        tex = slides_from_images()
-
-        if tex is None:
-            parser.print_usage()
-            return 1
-
         texfile = clatex_dir + '/plots.tex' if main_tex is None else main_tex
 
-        with open(texfile, 'w+') as f:
-            f.write(tex)
-
-        main_tex = texfile
+        main_text = create_slides_from_plots(texfile)
 
 
     if main_tex is None:
@@ -421,8 +422,10 @@ def main():
         compile_ok = compile_latex(main_tex)
         if not compile_ok:
             return 1
+
     else:
         print_info('Nothing to be done')
+
 
     if args.open:
         subprocess.call(['open', main_pdf])
