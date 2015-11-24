@@ -119,7 +119,7 @@ def colorize_latex_output(logfile):
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
+            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (os.path.basename(name), pages, size, n_warning, n_error)
             print_info(msg)
 
         elif 'No pages of output' in line:
