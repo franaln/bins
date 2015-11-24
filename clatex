@@ -8,10 +8,10 @@ import argparse
 import subprocess
 from datetime import datetime
 
-C_WARNING = '' #'\033[93m'
-C_ERROR   = '' #'\033[0;31m'
-C_INFO    = '' #'\033[0;32m'
-C_RESET   = '' #'\033[0m'
+C_WARNING = '\033[93m'
+C_ERROR   = '\033[0;31m'
+C_INFO    = '\033[0;32m'
+C_RESET   = '\033[0m'
 
 def print_info(msg):
     print(C_INFO + msg + C_RESET)
@@ -168,6 +168,10 @@ def compile_latex(texfile):
 
     if os.path.isdir('images'):
         os.environ['TEXINPUTS'] = './/:./images//:'
+
+    if os.path.isdir('figures'):
+        os.environ['TEXINPUTS'] = './/:./figures//:'
+
 
     st = subprocess.call(pdflatex_cmd, shell=True)
 
@@ -383,7 +387,7 @@ def main():
 
         texfile = clatex_dir + '/plots.tex' if main_tex is None else main_tex
 
-        main_text = create_slides_from_plots(texfile)
+        main_tex = create_slides_from_plots(texfile)
 
 
     if main_tex is None:
