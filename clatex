@@ -370,6 +370,8 @@ def main():
 
             tmp_tex = clatex_dir + '/' + main_name + '.tex'
 
+            print_info('Creating %s -> %s' % (main_tex, tmp_tex))
+
             create_tikz_tex(main_tex, tmp_tex)
 
             main_tex = tmp_tex
@@ -377,6 +379,8 @@ def main():
         elif args.table:
 
             tmp_tex = clatex_dir + '/' + main_name + '.tex'
+
+            print_info('Creating %s -> %s' % (main_tex, tmp_tex))
 
             create_table_tex(main_tex, tmp_tex)
 
@@ -386,7 +390,7 @@ def main():
     if args.plots:
 
         texfile = clatex_dir + '/plots.tex' if main_tex is None else main_tex
-
+        print_info('Creating %s' % (texfile))
         main_tex = create_slides_from_plots(texfile)
 
 
