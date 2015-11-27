@@ -99,7 +99,7 @@ def bytes_to_human(num):
 def colorize_latex_output(logfile):
 
     try:
-        enc='iso-8859-15'
+        enc = 'iso-8859-15'
         log = open(logfile, 'r', encoding=enc).read().split('\n')
     except UnicodeDecodeError as e:
         raise
@@ -108,8 +108,10 @@ def colorize_latex_output(logfile):
 
     n_warning = 0
     n_error = 0
+
     show_warnings = args.debug
     compile_ok = True
+
     for i, line in enumerate(log):
 
         if 'Output written on' in line:
@@ -151,7 +153,7 @@ def colorize_bibtex_output(logfile):
     pass
 
 
-def compile_latex(texfile):
+def compile_tex(texfile):
 
     name = os.path.basename(texfile)[:-4]
     pdf_file = clatex_dir+'/%s.pdf' % name
@@ -183,7 +185,7 @@ def compile_latex(texfile):
         compile_ok = False
 
     if compile_ok and args.bibtex:
-        print_info('-- Running bibtex')
+        print_info('Running bibtex')
         pwd = os.getcwd()
 
         os.environ['TEXMFOUTPUT'] = clatex_dir+':'
@@ -199,7 +201,6 @@ def compile_latex(texfile):
         subprocess.call(pdflatex_cmd, shell=True)
         subprocess.call(pdflatex_cmd, shell=True)
 
-
     if compile_ok and os.path.isfile(pdf_file):
 
         pdf_file_final = '%s.pdf' % name
@@ -207,10 +208,49 @@ def compile_latex(texfile):
         if args.table:
             crop_pdf(pdf_file, pdf_file_final)
         else:
-            os.system('cp %s %s' % (pdf_file, pdf_file_final))
+            subprocess.call(['cp', pdf_file, pdf_file_final])
 
 
     return compile_ok
+
+
+def create_tex():
+
+    tex = None
+    if args.texfile is not None:
+
+        tex = args.texfile
+        name = os.path.basename(tex)[:-4]
+
+        if args.tikz:
+
+            tmp_tex = clatex_dir + '/' + name + '.tex'
+
+            create_tikz_tex(tex, tmp_tex)
+
+            main_tex = tmp_tex
+
+        elif args.table:
+
+            tmp_tex = clatex_dir + '/' + name + '.tex'
+
+            create_table_tex(tex, tmp_tex)
+
+            tex = tmp_tex
+
+
+    if args.plots:
+
+        texfile = clatex_dir + '/plots.tex' if tex is None else tex
+
+        tex = create_slides_from_plots(texfile)
+
+
+    if tex is None:
+        tex = find_tex_file()
+
+
+    return tex
 
 
 def create_tikz_tex(input_tex, output_tex):
@@ -254,27 +294,7 @@ def create_table_tex(input_tex, output_tex):
         of.write(tex)
 
 
-def convert_image(fname):
-    iname = fname
-    oname = fname[:-4] + '.pdf'
-    cmd = 'convert %s %s' % (iname, oname)
-    os.system(cmd)
-
-
-def crop_pdf(input_pdf, output_pdf):
-    os.system('pdfcrop {0} {1} > /dev/null'.format(input_pdf, output_pdf))
-
-
-def clean(fname):
-    try:
-        os.unlink(fname)
-    except FileNotFoundError:
-        pass
-    except IsADirectoryError:
-        shutil.rmtree(fname)
-
-
-def create_slides_from_plots(output_tex):
+def create_plots_tex(output_tex):
 
     header = r"""
 \documentclass[center,10pt,cm]{beamer}
@@ -323,6 +343,29 @@ def create_slides_from_plots(output_tex):
     return output_tex
 
 
+def convert_image(fname):
+    iname = fname
+    oname = fname[:-4] + '.pdf'
+    cmd = 'convert %s %s' % (iname, oname)
+    os.system(cmd)
+
+
+def crop_pdf(input_pdf, output_pdf):
+    os.system('pdfcrop {0} {1} > /dev/null'.format(input_pdf, output_pdf))
+
+
+def clean(fname):
+    try:
+        os.unlink(fname)
+    except FileNotFoundError:
+        pass
+    except IsADirectoryError:
+        shutil.rmtree(fname)
+
+    print_info('Removed %s' % fname)
+
+
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -349,6 +392,7 @@ def main():
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
 
+    # clean
     if args.clean:
         clean(clatex_dir)
         return 0
@@ -360,38 +404,8 @@ def main():
     subprocess.call('mkdir -p %s' % clatex_dir, shell=True)
 
 
-    main_tex = None
-    if args.texfile is not None:
-
-        main_tex = args.texfile
-        main_name = os.path.basename(main_tex)[:-4]
-
-        if args.tikz:
-
-            tmp_tex = clatex_dir + '/' + main_name + '.tex'
-
-            create_tikz_tex(main_tex, tmp_tex)
-
-            main_tex = tmp_tex
-
-        elif args.table:
-
-            tmp_tex = clatex_dir + '/' + main_name + '.tex'
-
-            create_table_tex(main_tex, tmp_tex)
-
-            main_tex = tmp_tex
-
-
-    if args.plots:
-
-        texfile = clatex_dir + '/plots.tex' if main_tex is None else main_tex
-
-        main_tex = create_slides_from_plots(texfile)
-
-
-    if main_tex is None:
-        main_tex = find_tex_file()
+    # create/find tex
+    main_tex = create_tex()
 
     if main_tex is None:
         print_error('There is no tex to compile...')
@@ -401,7 +415,7 @@ def main():
     main_pdf = main_name + '.pdf'
 
 
-    # Compile
+    # compile
     print_info('Compiling %s -> %s' % (main_tex, main_pdf))
 
     need_compile = False
@@ -423,7 +437,7 @@ def main():
 
 
     if need_compile:
-        compile_ok = compile_latex(main_tex)
+        compile_ok = compile_tex(main_tex)
         if not compile_ok:
             return 1
 
