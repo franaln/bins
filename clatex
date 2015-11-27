@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import time
 import shutil
 import argparse
 import subprocess
@@ -148,7 +149,28 @@ def colorize_latex_output(logfile):
 
 
 def colorize_bibtex_output(logfile):
-    pass
+
+    re_updatefile = re.compile (".*INFO - Found BibTeX data source '(?P<filename>.*)'$")
+    re_error = re.compile (".*Utils.pm:[0-9]+> (?P<kind>(WARN|ERROR)) .* line (?P<line>[0-9]+), (?P<text>.*)")
+
+    try:
+        log = open (self.blg, "r")
+    except:
+        msg.warn (_("cannot open Biber logfile: %s") % self.blg, pkg="biblatex")
+        return
+
+    with log:
+        for line in log:
+            m = re_updatefile.match (line)
+            if m:
+                current_bib = m.group ("filename")
+
+            m = re_error.match (line)
+            if m:
+                print(m.group ("kind"),
+                      int(m.group ("line")),
+                      m.group ("text"))
+
 
 
 def compile_latex(texfile):
@@ -194,6 +216,8 @@ def compile_latex(texfile):
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
         os.chdir(pwd)
+
+        colorize_bibtex_output(clatex_dir + '/' + name+'.blg')
 
     if compile_ok and not args.fast:
         subprocess.call(pdflatex_cmd, shell=True)
@@ -336,11 +360,20 @@ def main():
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only',    default='', help='include only')
-    parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp. not implemented.')
+    parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp.')
 
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
     parser.add_argument('--plots', action='store_true', help='merge plots in slides')
     parser.add_argument('--table', action='store_true', help='compile table')
+
+    parser.add_argument('--loop', action='store_true', help='Compile every 5 seconds')
+    #while true ; do clatex --tikz topoetcone.tex ; sleep 5 ; done
+        # if args.loop:
+        #     while True:
+        #         time.sleep(5)
+        #         compile_ok = compile_latex(main_tex)
+        #         if not compile_ok:
+        #             return 1
 
 
     global args
@@ -353,7 +386,7 @@ def main():
         clean(clatex_dir)
         return 0
 
-    if args.force:
+    if args.force or args.loop:
         clean(clatex_dir)
 
     # create clatex dir
