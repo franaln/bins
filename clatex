@@ -118,11 +118,11 @@ def colorize_latex_output(logfile):
         if 'Output written on' in line:
             sline = line.split()
 
-            name = sline[3]
+            name = os.path.basename(sline[3])
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name[8:], pages, size, n_warning, n_error)
+            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name, pages, size, n_warning, n_error)
             print_info(msg)
 
         elif 'No pages of output' in line:
@@ -186,6 +186,7 @@ def compile_tex(texfile):
         compile_ok = False
 
     if compile_ok and args.bibtex:
+
         print('Running bibtex')
         pwd = os.getcwd()
 
@@ -283,6 +284,7 @@ def create_tikz_tex(input_tex, output_tex):
         of.write(template_before)
         of.write(tikzplot)
         of.write(template_after)
+
 
 
 def create_table_tex(input_tex, output_tex):
@@ -392,7 +394,7 @@ def main():
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
     parser.add_argument('--plots', action='store_true', help='merge plots in slides')
     parser.add_argument('--table', action='store_true', help='compile table')
-    parser.add_argument('--only', dest='only')
+    parser.add_argument('--only', dest='only', help='merge only the plots matching this')
 
     global args
     args = parser.parse_args()
