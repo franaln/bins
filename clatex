@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import time
+import glob
 import shutil
 import argparse
 import subprocess
@@ -120,11 +121,11 @@ def colorize_latex_output(logfile):
         if 'Output written on' in line:
             sline = line.split()
 
-            name = sline[3]
+            name = os.path.basename(sline[3])
             pages = sline[4][1:]
             size = bytes_to_human(sline[6])
 
-            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (os.path.basename(name), pages, size, n_warning, n_error)
+            msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name, pages, size, n_warning, n_error)
             print_info(msg)
 
         elif 'No pages of output' in line:
@@ -209,6 +210,7 @@ def compile_tex(texfile):
         compile_ok = False
 
     if compile_ok and args.bibtex:
+
         print('Running bibtex')
         pwd = os.getcwd()
 
@@ -269,7 +271,7 @@ def create_tex():
 
         texfile = clatex_dir + '/plots.tex' if tex is None else tex
 
-        tex = create_slides_from_plots(texfile)
+        tex = create_plots_tex(texfile, args.only)
 
 
     if tex is None:
@@ -282,6 +284,7 @@ def create_tex():
 def create_tikz_tex(input_tex, output_tex):
 
     template_before = r"""\documentclass{article}
+\usepackage[utf8]{inputenc}
 \usepackage{mathptmx}
 \usepackage{tikz}
 \usetikzlibrary{patterns}
@@ -309,6 +312,7 @@ def create_tikz_tex(input_tex, output_tex):
         of.write(template_after)
 
 
+
 def create_table_tex(input_tex, output_tex):
 
     tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \begin{document} \pagestyle{empty}'
@@ -320,7 +324,7 @@ def create_table_tex(input_tex, output_tex):
         of.write(tex)
 
 
-def create_plots_tex(output_tex):
+def create_plots_tex(output_tex, only):
 
     header = r"""
 \documentclass[center,10pt,cm]{beamer}
@@ -342,7 +346,13 @@ def create_plots_tex(output_tex):
 
     body = ""
     counter = 0
-    for img in sorted(os.listdir('.')):
+
+    if only is not None:
+        images = glob.glob(only)
+    else:
+        images = [ i for i in os.listdir('.') if i.endswith('.pdf') ]
+
+    for img in sorted(images):
 
         if not img.endswith('.pdf'):
             continue
@@ -438,10 +448,11 @@ def main():
     parser.add_argument('--table', action='store_true', help='compile table')
     parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds')
     parser.add_argument('--template', help='')
-
+    parser.add_argument('--only', dest='only', help='merge only the plots matching this')
 
     global args
     args = parser.parse_args()
+
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
