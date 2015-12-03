@@ -58,8 +58,9 @@ def get_mtime(fname):
     return os.path.getmtime(fname)
 
 
-def get_dependence(fname):
-    dependence = []
+def get_tex_dependencies(fname):
+
+    dependencies = []
     for line in open(fname):
         line = line.replace('\n', '')
 
@@ -68,7 +69,8 @@ def get_dependence(fname):
             dep = dep.groups()[0]
             if not '.' in dep:
                 dep += '.tex'
-            dependence.append(dep)
+            if os.path.isfile(dep):
+                dependencies.append(dep)
             continue
 
         dep = re.match(r'\\include{(.*)}', line)
@@ -76,10 +78,11 @@ def get_dependence(fname):
             dep = dep.groups()[0]
             if not '.' in dep:
                 dep += '.tex'
-            dependence.append(dep)
+            if os.path.isfile(dep):
+                dependencies.append(dep)
             continue
 
-    return dependence
+    return dependencies
 
 
 def check_tikz_picture(fname):
@@ -87,7 +90,6 @@ def check_tikz_picture(fname):
     return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
 
 # Colorize LaTeX output.
-
 def bytes_to_human(num):
     num = int(num)
     for unit in ['','K','M','G','T','P','E','Z']:
@@ -156,12 +158,13 @@ def colorize_bibtex_output(logfile):
     re_error = re.compile (".*Utils.pm:[0-9]+> (?P<kind>(WARN|ERROR)) .* line (?P<line>[0-9]+), (?P<text>.*)")
 
     try:
-        log = open (self.blg, "r")
+        log = open(logfile, "r")
     except:
-        msg.warn (_("cannot open Biber logfile: %s") % self.blg, pkg="biblatex")
+        print_warning("cannot open bibtex logfile: %s" % logfile)
         return
 
     with log:
+
         for line in log:
             m = re_updatefile.match (line)
             if m:
@@ -169,10 +172,9 @@ def colorize_bibtex_output(logfile):
 
             m = re_error.match (line)
             if m:
-                print(m.group ("kind"),
-                      int(m.group ("line")),
-                      m.group ("text"))
-
+                print_info(m.group("kind"),
+                      int(m.group("line")),
+                      m.group("text"))
 
 
 def compile_tex(texfile):
@@ -207,7 +209,7 @@ def compile_tex(texfile):
         compile_ok = False
 
     if compile_ok and args.bibtex:
-        print_info('Running bibtex')
+        print('Running bibtex')
         pwd = os.getcwd()
 
         os.environ['TEXMFOUTPUT'] = clatex_dir+':'
@@ -215,7 +217,7 @@ def compile_tex(texfile):
         os.environ['BSTINPUT'] = clatex_dir + ':'
 
         os.chdir(clatex_dir)
-        bibtex_cmd = 'bibtex %s.aux' % name
+        bibtex_cmd = 'bibtex %s.aux > /dev/null' % name
         os.system(bibtex_cmd)
         os.chdir(pwd)
 
@@ -362,7 +364,7 @@ def create_plots_tex(output_tex):
     with open(output_tex, 'w+') as f:
         f.write(text)
 
-    print_info('Created slides "%s" with %i plots' % (output_tex, counter))
+    print('Created slides "%s" with %i plots' % (output_tex, counter))
 
     return output_tex
 
@@ -386,7 +388,33 @@ def clean(fname):
     except IsADirectoryError:
         shutil.rmtree(fname)
 
-    print_info('Removed %s' % fname)
+    print('Removed %s' % fname)
+
+# templates
+template_slides = r"""
+\documentclass[center,10pt,cm]{beamer}
+
+\usetheme{mini}
+\input{physics.tex}
+
+\title{Title}
+\author{Francisco Alonso}
+\institute{UNLP/IFLP}
+\date[meeting]{\today}
+
+\begin{document}
+\centering
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\begin{frame}{Title}
+
+\end{frame}
+
+\end{document}
+"""
 
 
 
@@ -408,15 +436,8 @@ def main():
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
     parser.add_argument('--plots', action='store_true', help='merge plots in slides')
     parser.add_argument('--table', action='store_true', help='compile table')
-
-    parser.add_argument('--loop', action='store_true', help='Compile every 5 seconds')
-    #while true ; do clatex --tikz topoetcone.tex ; sleep 5 ; done
-        # if args.loop:
-        #     while True:
-        #         time.sleep(5)
-        #         compile_ok = compile_latex(main_tex)
-        #         if not compile_ok:
-        #             return 1
+    parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds')
+    parser.add_argument('--template', help='')
 
 
     global args
@@ -424,6 +445,13 @@ def main():
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
+
+    # templates
+    if args.template:
+        print('created')
+
+        return 0
+
 
     # clean
     if args.clean:
@@ -433,14 +461,18 @@ def main():
     if args.force or args.loop:
         clean(clatex_dir)
 
+
     # create clatex dir
-    subprocess.call('mkdir -p %s' % clatex_dir, shell=True)
+    try:
+        os.makedirs(clatex_dir)
+    except OSError as exception:
+        pass
 
     # create/find tex
     main_tex = create_tex()
 
     if main_tex is None:
-        print_error('There is no tex to compile...')
+        print('There is no tex to compile...')
         return 1
 
     main_name = os.path.basename(main_tex)[:-4]
@@ -448,7 +480,7 @@ def main():
 
 
     # compile
-    print_info('Compiling %s -> %s' % (main_tex, main_pdf))
+    print('Compiling %s -> %s' % (main_tex, main_pdf))
 
     need_compile = False
     if args.force or not os.path.isfile(main_pdf):
@@ -461,9 +493,9 @@ def main():
         if diff > 0:
             need_compile = True
         else:
-            for dep in get_dependence(main_tex):
+            for dep in get_tex_dependencies(main_tex):
                 dep_time = datetime.fromtimestamp(get_mtime(dep))
-                if (main_pdf_time - dep_time).total_seconds() < 0:
+                if (dep_time - main_pdf_time).total_seconds() > 0:
                     need_compile = True
                     break
 
@@ -474,7 +506,18 @@ def main():
             return 1
 
     else:
-        print_info('Nothing to be done')
+        print('Nothing to be done')
+
+
+    if args.loop:
+        while True:
+            try:
+                time.sleep(5)
+                create_tex()
+                compile_tex(main_tex)
+            except KeyboardInterrupt:
+                print('Loop stopped')
+                return 0
 
 
     if args.open:
