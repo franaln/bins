@@ -441,21 +441,23 @@ def main():
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
     parser.add_argument('-j', dest='only',    default='', help='include only')
-    parser.add_argument('-t', dest='temp',    action='store_true', help='compile in /tmp.')
-
+    parser.add_argument('-t', '--tex', action='store_true', help='only create tex. don\'t compile')
+    parser.add_argument('-z', '--tmp', action='store_true', help='compile in /tmp.')
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
     parser.add_argument('--plots', action='store_true', help='merge plots in slides')
     parser.add_argument('--table', action='store_true', help='compile table')
-    parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds')
     parser.add_argument('--template', help='')
     parser.add_argument('--only', dest='only', help='merge only the plots matching this')
+    parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds.')
+    parser.add_argument('--sleep', type=int)
+
 
     global args
     args = parser.parse_args()
 
 
     global clatex_dir
-    clatex_dir = '/tmp/clatex' if args.temp else '.clatex'
+    clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
 
     # templates
     if args.template:
@@ -489,6 +491,8 @@ def main():
     main_name = os.path.basename(main_tex)[:-4]
     main_pdf = main_name + '.pdf'
 
+    if args.tex:
+        return 0
 
     # compile
     print('Compiling %s -> %s' % (main_tex, main_pdf))
@@ -521,13 +525,15 @@ def main():
 
 
     if args.loop:
+        sleep_interval = args.sleep if args.sleep is not None else 5
+
         while True:
             try:
-                time.sleep(5)
+                time.sleep(sleep_interval)
                 create_tex()
                 compile_tex(main_tex)
             except KeyboardInterrupt:
-                print('Loop stopped')
+                print('Stopped')
                 return 0
 
 
