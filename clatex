@@ -350,7 +350,7 @@ def get_tex():
     if args.texfile is not None and os.path.isfile(args.texfile):
 
         fname = args.texfile
-        name = os.path.basename(fname)[:-4]
+        name = os.path.splitext(os.path.basename(fname))[0]
 
         if fname.endswith('.sld'):
             subprocess.call(['beamerize', tex])
@@ -497,7 +497,7 @@ def create_plots_tex(output_tex, only):
 
 def convert_image(fname):
     iname = fname
-    oname = fname[:-4] + '.pdf'
+    oname = os.path.splitext(fname)[0] + '.pdf'
     cmd = 'convert %s %s' % (iname, oname)
     os.system(cmd)
 
@@ -580,7 +580,7 @@ def main():
         print('There is no tex to compile...')
         return 1
 
-    main_name = os.path.basename(main_tex)[:-4]
+    main_name = os.path.splitext(os.path.basename(main_tex))[0]
     main_pdf = main_name + '.pdf'
 
     if args.tex:
