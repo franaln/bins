@@ -88,12 +88,12 @@ open() {
 }
 
 # if only one file
-if [ $# -eq 1 ] ; then
-    app=$(get_app "${1}")
-    open "${app}" "${1}"
+if [ "$#" -eq 1 ] ; then
+    app=$(get_app "${@}")
+    open "${app}" "${@}"
 
 else
-    while [[ $1 ]] ; do
+    while [[ "${1}" ]] ; do
         app=$(get_app "${1}")
         open "${app}" "${1}"
         shift
