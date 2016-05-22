@@ -353,8 +353,9 @@ def get_tex():
         name = os.path.splitext(os.path.basename(fname))[0]
 
         if fname.endswith('.sld'):
-            subprocess.call(['beamerize', tex])
             tex = name + '.tex'
+            #subprocess.call(['beamerize', fname])
+            subprocess.call(['slidify', fname])
 
         elif fname.endswith('.md'):
 
@@ -377,11 +378,14 @@ def get_tex():
 
             create_tikz_tex(fname, tex)
 
-        elif args.table:
+        elif args.table or fname.startswith('table'):
 
             tex = clatex_dir + '/' + name + '.tex'
 
             create_table_tex(fname, tex)
+
+        else:
+            tex = fname
 
     if args.plots:
 
