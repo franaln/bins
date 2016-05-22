@@ -335,7 +335,7 @@ def compile_tex(texfile):
 
         pdf_file_final = '%s.pdf' % name
 
-        if args.table:
+        if args.table or name.startswith('table'):
             crop_pdf(pdf_file, pdf_file_final)
         else:
             subprocess.call(['cp', pdf_file, pdf_file_final])
