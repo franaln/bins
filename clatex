@@ -175,6 +175,22 @@ def check_tikz_picture(fname):
     return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
 
 
+def get_bibtex_style(main_tex):
+
+    for line in open(main_tex):
+        line = line.replace('\n', '')
+
+        style = re.match(r'\\bibliographystyle{(.*)}', line)
+        if style is not None:
+            style = style.groups()[0]
+
+            if os.path.isfile(style+'.bst'):
+                return style
+            continue
+
+    return None
+
+
 # Colorize LaTeX output.
 def bytes_to_human(num):
     num = int(num)
@@ -316,6 +332,11 @@ def compile_tex(texfile):
         os.environ['BIBINPUTS'] = pwd + ':'
         os.environ['BSTINPUT'] = clatex_dir + ':' + pwd + ':'
 
+        style = get_bibtex_style(texfile)
+
+        if style is not None:
+            os.system('cp %s.bst %s/%s' % (style, clatex_dir, style))
+
         os.chdir(clatex_dir)
         bibtex_cmd = 'bibtex %s.aux' % name
         os.system(bibtex_cmd)
@@ -355,7 +376,7 @@ def get_tex():
         if fname.endswith('.sld'):
             tex = name + '.tex'
             #subprocess.call(['beamerize', fname])
-            subprocess.call(['slidify', fname])
+            subprocess.call(['slidify2.py', fname])
 
         elif fname.endswith('.md'):
 
@@ -626,7 +647,7 @@ def main():
         while True:
             try:
                 time.sleep(sleep_interval)
-                create_tex()
+                get_tex()
                 compile_tex(main_tex)
             except KeyboardInterrupt:
                 print('Stopped')
