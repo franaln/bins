@@ -565,6 +565,8 @@ def main():
     parser.add_argument('--sleep', type=int)
     parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine')
 
+    parser.add_argument('--slides', help='create slides template')
+
 
     global args
     args = parser.parse_args()
@@ -577,8 +579,14 @@ def main():
     latex_engine = args.engine
 
     # templates
-    if args.template:
+    if args.slides is not None:
         print('created')
+
+        os.system('mkdir -p %s' % args.slides)
+        os.system('mkdir -p %s/images' % args.slides)
+
+        with open(args.slides+'/slides.tex', 'w+') as f:
+            f.write(template_slides)
 
         return 0
 
