@@ -491,7 +491,7 @@ def create_plots_tex(output_tex, only):
     if only:
         images = glob.glob(only)
     else:
-        images = [ i for i in os.listdir('.') if i.endswith('.pdf') ]
+        images = [ i for i in os.listdir('.') if i.endswith('.pdf') and not i == 'plots.pdf' ]
 
     for img in sorted(images):
 
