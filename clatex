@@ -88,8 +88,9 @@ template_slides = r"""
 
 \usetheme{mini}
 \input{physics.tex}
+\input{susy.tex}
 
-\title{Title}
+\title{}
 \author{Francisco Alonso}
 \institute{UNLP/IFLP}
 \date[meeting]{\today}
@@ -101,7 +102,7 @@ template_slides = r"""
   \titlepage
 \end{frame}
 
-\begin{frame}{Title}
+\begin{frame}{}
 
 \end{frame}
 
@@ -291,7 +292,6 @@ def colorize_bibtex_output(logfile):
                       m.group("text"))
 
 
-
 def compile_tex(texfile):
 
     name = os.path.basename(texfile)[:-4]
@@ -414,10 +414,8 @@ def get_tex():
 
         tex = create_plots_tex(texfile, args.filter)
 
-
     if tex is None:
         tex = find_tex_file()
-
 
     return tex
 
@@ -451,7 +449,6 @@ def create_tikz_tex(input_tex, output_tex):
         of.write(template_before)
         of.write(tikzplot)
         of.write(template_after)
-
 
 
 def create_table_tex(input_tex, output_tex):
@@ -541,10 +538,9 @@ def clean(fname):
 
 
 
-
 def main():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Compile latex')
 
     parser.add_argument('texfile', nargs='?', help='')
     parser.add_argument('-f', dest='force',   action='store_true', help='force compilation')
@@ -581,10 +577,12 @@ def main():
 
     # templates
     if args.slides is not None:
-        print('created')
+        name = args.slides
 
-        os.system('mkdir -p %s' % args.slides)
-        os.system('mkdir -p %s/images' % args.slides)
+        print('Created slides template in %s' % name)
+
+        os.system('mkdir -p %s' % name)
+        os.system('mkdir -p %s/images' % name)
 
         with open(args.slides+'/slides.tex', 'w+') as f:
             f.write(template_slides)
