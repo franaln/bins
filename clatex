@@ -94,6 +94,7 @@ template_slides = r"""
 \author{Francisco Alonso}
 \institute{UNLP/IFLP}
 \date[meeting]{\today}
+\titlegraphic{\img{0.13}{iflp_logo.pdf}\hspace{0.8cm}\img{0.12}{atlas_logo.pdf}}
 
 \begin{document}
 \centering
