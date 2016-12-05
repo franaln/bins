@@ -561,7 +561,7 @@ def main():
     parser.add_argument('--template', help='')
     parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
-    parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine')
+    parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine: pdflatex, xelatex, lualatex, ...')
 
     parser.add_argument('--slides', help='create slides template')
 
