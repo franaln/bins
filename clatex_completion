@@ -1,0 +1,21 @@
+# bash completion for clatex
+# copy this file to /usr/share/bash-completions/completions/clatex
+
+_clatex()
+{
+  local cur prev opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts="-h --help -f -c -g -o -v -b -a -j -t -z --tikz --plots --filter --table --template --loop --sleep -e --slides"
+
+  if [[ "$cur" != -* ]]; then
+        _filedir '@(tex)'
+  else
+      COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
+  fi
+
+    return 0
+}
+
+complete -F _clatex clatex
