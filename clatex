@@ -409,11 +409,11 @@ def get_tex():
         else:
             tex = fname
 
-    if args.plots:
+    if args.pdfs:
 
-        texfile = clatex_dir + '/plots.tex' if tex is None else tex
+        texfile = clatex_dir + '/pdfs.tex' if tex is None else tex
 
-        tex = create_plots_tex(texfile, args.filter)
+        tex = create_pdfs_tex(texfile, args.filter)
 
     if tex is None:
         tex = find_tex_file()
@@ -463,7 +463,7 @@ def create_table_tex(input_tex, output_tex):
         of.write(tex)
 
 
-def create_plots_tex(output_tex, filter_):
+def create_pdfs_tex(output_tex, filter_):
 
     header = r"""
 \documentclass[center,10pt,cm]{beamer}
@@ -513,7 +513,7 @@ def create_plots_tex(output_tex, filter_):
     with open(output_tex, 'w+') as f:
         f.write(text)
 
-    print('Created slides "%s" with %i plots' % (output_tex, counter))
+    print('Created slides "%s" with %i pdfs' % (output_tex, counter))
 
     return output_tex
 
@@ -555,7 +555,7 @@ def main():
     parser.add_argument('-t', '--tex', action='store_true', help='only create tex. don\'t compile')
     parser.add_argument('-z', '--tmp', action='store_true', help='compile in /tmp.')
     parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
-    parser.add_argument('--plots', action='store_true', help='merge plots in slides')
+    parser.add_argument('--pdfs', action='store_true', help='merge pdfs in slides')
     parser.add_argument('--filter', help='filter files for --plots')
     parser.add_argument('--table', action='store_true', help='compile table')
     parser.add_argument('--template', help='')
