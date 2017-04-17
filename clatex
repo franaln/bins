@@ -230,7 +230,7 @@ def colorize_latex_output(logfile, show=True):
                 pages = sline[4][1:]
                 size = bytes_to_human(sline[6])
 
-                msg = 'Output written on %s. %s pages, %s, %s warnings, %s errors.' % (name, pages, size, n_warning, n_error)
+                msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (name, pages, size, n_warning, n_error)
 
             except:
                 msg = line
@@ -357,7 +357,7 @@ def compile_tex(texfile):
 
         pdf_file_final = '%s.pdf' % name
 
-        if args.table or name.startswith('table'):
+        if args.table: ## or name.startswith('table'):
             crop_pdf(pdf_file, pdf_file_final)
         else:
             subprocess.call(['cp', pdf_file, pdf_file_final])
@@ -400,7 +400,7 @@ def get_tex():
 
             create_tikz_tex(fname, tex)
 
-        elif args.table or fname.startswith('table'):
+        elif args.table: ## or fname.startswith('table'):
 
             tex = clatex_dir + '/' + name + '.tex'
 
@@ -411,7 +411,7 @@ def get_tex():
 
     if args.pdfs:
 
-        texfile = clatex_dir + '/pdfs.tex' if tex is None else tex
+        texfile = clatex_dir + '/pdfs.tex' if args.texfile is None else args.texfile
 
         tex = create_pdfs_tex(texfile, args.filter)
 
@@ -465,7 +465,7 @@ def create_table_tex(input_tex, output_tex):
 
 def create_pdfs_tex(output_tex, filter_):
 
-    header = r"""
+    header = r"""%% Created with clatex
 \documentclass[center,10pt,cm]{beamer}
 
 % basic style
@@ -489,7 +489,7 @@ def create_pdfs_tex(output_tex, filter_):
     if filter_ is not None:
         images = [ i for i in os.listdir('.') if i.endswith('.pdf') and filter_ in i ] ##glob.glob(filter_)
     else:
-        images = [ i for i in os.listdir('.') if i.endswith('.pdf') and not i == 'plots.pdf' ]
+        images = [ i for i in os.listdir('.') if i.endswith('.pdf') and not i == 'pdfs.pdf' ]
 
     for img in sorted(images):
 
