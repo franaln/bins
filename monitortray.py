@@ -22,7 +22,7 @@ RAM_LEFT_CRITICAL = 75
 
 CPU_TEMP_CRITITCAL = 80
 
-LOGFILE = 'test.log' ##"/home/fran/.batterylog"
+LOGFILE = "/home/fran/.batterylog"
 
 F_ENERGY_NOW  = "/sys/class/power_supply/BAT0/energy_now"
 F_ENERGY_FULL = "/sys/class/power_supply/BAT0/energy_full"
@@ -358,6 +358,10 @@ class Monitor:
             if temp > CPU_TEMP_CRITITCAL:
                 self.set_icon('apport')
                 break
+
+        # Check discharging rate
+        if status == 'Discharging' and power > 25.:
+            self.set_icon('apport')
 
         return True
 
