@@ -176,6 +176,11 @@ def check_tikz_picture(fname):
     text = open(fname).read()
     return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
 
+def check_table_tex(fname):
+    text = open(fname).read()
+    return (r'\documentclass' not in text and r'\begin{tabular}' in text)
+
+
 
 def get_bibtex_style(main_tex):
 
@@ -395,12 +400,14 @@ def get_tex():
             subprocess.call(pandoc_cmd, shell=True)
 
         elif args.tikz or check_tikz_picture(fname):
+            args.tikz = True
 
             tex = clatex_dir + '/' + name + '.tex'
 
             create_tikz_tex(fname, tex)
 
-        elif args.table: ## or fname.startswith('table'):
+        elif args.table or check_table_tex(fname):
+            args.table = True
 
             tex = clatex_dir + '/' + name + '.tex'
 

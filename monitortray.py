@@ -311,12 +311,12 @@ class Monitor:
         # show notification if necessary
         if status == self.battery['status'] and status == 'Discharging':
             if percentage < BATTERY_LEVEL_CRITICAL and self.battery['level'] == 'LOW':
-                self.send_notification("Battery is under 10%. Suspending in 2 minutes...",
+                self.send_notification("Battery is under %s%%. Suspending in 2 minutes..." % BATTERY_LEVEL_CRITICAL,
                                        "dialog-information")
                 self.battery['level'] = 'CRITICAL'
 
             elif (percentage <= BATTERY_LEVEL_LOW and self.battery['level'] == 'NORMAL'):
-                self.send_notification("Battery is under 15%.",
+                self.send_notification("Battery is under %s%%." % BATTERY_LEVEL_LOW,
                                        "dialog-information")
                 self.battery['level'] = 'LOW'
 
