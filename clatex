@@ -172,16 +172,6 @@ def get_tex_dependencies(fname):
     return dependencies
 
 
-def check_tikz_picture(fname):
-    text = open(fname).read()
-    return (r'\documentclass' not in text and r'\begin{tikzpicture}' in text)
-
-def check_table_tex(fname):
-    text = open(fname).read()
-    return (r'\documentclass' not in text and r'\begin{tabular}' in text)
-
-
-
 def get_bibtex_style(main_tex):
 
     for line in open(main_tex):
@@ -362,10 +352,10 @@ def compile_tex(texfile):
 
         pdf_file_final = '%s.pdf' % name
 
-        if args.table: ## or name.startswith('table'):
+        if args.table:
             crop_pdf(pdf_file, pdf_file_final)
         else:
-            subprocess.call(['cp', pdf_file, pdf_file_final])
+            subprocess.call(['mv', pdf_file, pdf_file_final])
 
 
     return compile_ok
@@ -379,12 +369,20 @@ def get_tex():
         fname = args.texfile
         name = os.path.splitext(os.path.basename(fname))[0]
 
-        if fname.endswith('.sld'):
-            tex = name + '.tex'
-            #subprocess.call(['beamerize', fname])
-            subprocess.call(['slidify2.py', fname])
 
-        elif fname.endswith('.md'):
+        # check tikz/table/plain
+        text = open(fname).read()
+
+        if r'\documentclass' not in text:
+            if r'\begin{tikzpicture}' in text:
+                args.tikz = True
+            elif r'\begin{tabular}' in text:
+                args.table = True
+            else:
+                args.plain = True
+
+
+        if fname.endswith('.md'):
 
             tex = name + '.tex'
 
@@ -399,19 +397,23 @@ def get_tex():
             pandoc_cmd = 'pandoc -t beamer --template=%s %s -o %s' % (template_file, fname, tex)
             subprocess.call(pandoc_cmd, shell=True)
 
-        elif args.tikz or check_tikz_picture(fname):
-            args.tikz = True
+        elif args.tikz:
 
-            tex = clatex_dir + '/' + name + '.tex'
+            tex = '%s/%s.tex' % (clatex_dir, name)
 
             create_tikz_tex(fname, tex)
 
-        elif args.table or check_table_tex(fname):
-            args.table = True
+        elif args.table:
 
-            tex = clatex_dir + '/' + name + '.tex'
+            tex = '%s/%s.tex' % (clatex_dir, name)
 
             create_table_tex(fname, tex)
+
+        elif args.plain:
+
+            tex = '%s/%s.tex' % (clatex_dir, name)
+
+            create_plain_tex(fname, tex)
 
         else:
             tex = fname
@@ -426,6 +428,26 @@ def get_tex():
         tex = find_tex_file()
 
     return tex
+
+
+def create_plain_tex(input_tex, output_tex):
+
+    template_before = r"""\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+"""
+
+    template_after = r"""
+\end{document}
+"""
+
+    text = open(input_tex, 'r').read()
+
+    with open(output_tex, 'wt', encoding='utf-8') as of:
+        of.write(template_before)
+        of.write(text)
+        of.write(template_after)
 
 
 def create_tikz_tex(input_tex, output_tex):
@@ -561,10 +583,11 @@ def main():
     parser.add_argument('-j', dest='only',    default='', help='include only')
     parser.add_argument('-t', '--tex', action='store_true', help='only create tex. don\'t compile')
     parser.add_argument('-z', '--tmp', action='store_true', help='compile in /tmp.')
-    parser.add_argument('--tikz', action='store_true', help='compile tikz picture')
+    parser.add_argument('--tikz',  action='store_true', help='compile tikz picture')
+    parser.add_argument('--table', action='store_true', help='compile table')
+    parser.add_argument('--plain', action='store_true', help='compile plain text')
     parser.add_argument('--pdfs', action='store_true', help='merge pdfs in slides')
     parser.add_argument('--filter', help='filter files for --plots')
-    parser.add_argument('--table', action='store_true', help='compile table')
     parser.add_argument('--template', help='')
     parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
@@ -575,7 +598,6 @@ def main():
 
     global args
     args = parser.parse_args()
-
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
