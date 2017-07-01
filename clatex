@@ -299,9 +299,9 @@ def compile_tex(texfile):
         filecmd = texfile
 
     if args.verbose:
-        pdflatex_cmd = '%s -output-directory=%s -file-line-error %s' % (latex_engine, clatex_dir, filecmd)
+        pdflatex_cmd = '%s -output-directory=%s -file-line-error %s' % (args.engine, clatex_dir, filecmd)
     else:
-        pdflatex_cmd = '%s -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (latex_engine, clatex_dir, filecmd)
+        pdflatex_cmd = '%s -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (args.engine, clatex_dir, filecmd)
 
     if os.path.isdir('images'):
         os.environ['TEXINPUTS'] = './/:./images//:'
@@ -587,11 +587,10 @@ def main():
     parser.add_argument('--table', action='store_true', help='compile table')
     parser.add_argument('--plain', action='store_true', help='compile plain text')
     parser.add_argument('--pdfs', action='store_true', help='merge pdfs in slides')
-    parser.add_argument('--filter', help='filter files for --plots')
-    parser.add_argument('--template', help='')
+    parser.add_argument('--filter', help='filter files (to use with --pdfs)')
     parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
-    parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine: pdflatex, xelatex, lualatex, ...')
+    parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine: pdflatex (default), xelatex, lualatex, ...')
 
     parser.add_argument('--slides', help='create slides template')
 
@@ -601,9 +600,6 @@ def main():
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
-
-    global latex_engine
-    latex_engine = args.engine
 
     # templates
     if args.slides is not None:
