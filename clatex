@@ -420,7 +420,7 @@ def get_tex():
 
     if args.pdfs:
 
-        texfile = clatex_dir + '/pdfs.tex' if args.texfile is None else args.texfile
+        texfile = '%s/pdfs.tex' % clatex_dir if args.texfile is None else args.texfile
 
         tex = create_pdfs_tex(texfile, args.filter)
 
@@ -516,7 +516,13 @@ def create_pdfs_tex(output_tex, filter_):
     counter = 0
 
     if filter_ is not None:
-        images = [ i for i in os.listdir('.') if i.endswith('.pdf') and filter_ in i ] ##glob.glob(filter_)
+        filters = filter_.split(',')
+        images = []
+        for i in os.listdir('.'):
+            if not i.endswith('.pdf'):
+                continue
+            if all([ft in i for ft in filters]):
+                images.append(i)
     else:
         images = [ i for i in os.listdir('.') if i.endswith('.pdf') and not i == 'pdfs.pdf' ]
 
