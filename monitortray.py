@@ -1,24 +1,32 @@
 #!/usr/bin/env python
 
+import sys
+import os
+import re
+import cairo
+import argparse
+import subprocess
+import datetime
+
+import dbus
+import dbus.bus
+import dbus.service
+import dbus.mainloop.glib
+
 import gi
 gi.require_version('Notify', '0.7')
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
-from gi.repository import Gtk, Gdk, GObject, Notify
+from gi.repository import Gtk, Gdk, GObject, Notify, GLib
 
-import sys
-import subprocess
-import os
-import re
-import datetime
+UPDATE_INTERVAL = 5 # in secs
 
-UPDATE_INTERVAL = 15 # in secs
+# POWER
+BATTERY_LEVEL_LOW       = 15 # in %
+BATTERY_LEVEL_CRITICAL  = 10 # in %
 
-BATTERY_LEVEL_LOW       = 30 # in %
-BATTERY_LEVEL_CRITICAL  = 20 # in %
-
-RAM_LEFT_WARNING  = 300
-RAM_LEFT_CRITICAL = 75
+RAM_LEFT_WARNING  = 500
+RAM_LEFT_CRITICAL = 200
 
 CPU_TEMP_CRITITCAL = 80
 
@@ -33,13 +41,95 @@ F_POWER_NOW   = "/sys/class/power_supply/BAT0/power_now"
 F_BACKLIGHT_CURRENT = '/sys/class/backlight/intel_backlight/brightness'
 F_BACKLIGHT_MAX     = '/sys/class/backlight/intel_backlight/max_brightness'
 
+# AUDIO
+VOLUME_STEP = 2.5
+
+ICON_MUTE   = "audio-volume-muted-blocked-panel"
+ICON_ZERO   = "audio-volume-zero-panel"
+ICON_LOW    = "audio-volume-low-panel"
+ICON_MEDIUM = "audio-volume-medium-panel"
+ICON_HIGH   = "audio-volume-high-panel"
+
 # TODO:
 # Add logfile backup
-# ...
+# Implement osdify
 
-class Monitor:
+def get_cmd_output(cmd):
+    try:
+        if isinstance(cmd, list):
+            output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
+        else:
+            output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, shell=True)
+    except subprocess.CalledProcessError:
+        return ''
+
+    return output.decode('utf8').strip()
+
+
+class OSD(Gtk.Window):
 
     def __init__(self):
+        super().__init__(type=Gtk.WindowType.TOPLEVEL)
+
+        self.set_app_paintable(True)
+        self.set_decorated(False)
+        self.set_size_request(300, 40)
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_keep_above(True)
+
+        self.connect('draw', self.draw)
+
+        self.value = 100
+
+        self.normal_color = (0.93, 0.93, 0.93)
+        self.alt_color = (0.93, 0., 0.)
+
+        self.color = self.normal_color
+
+        self.visible = False
+
+        GLib.timeout_add(1000, self.close)
+
+    def close(self):
+        # if not self.visible:
+        #     return
+
+        self.hide()
+        self.visible = False
+        return True
+
+    def show(self, value, alt=False):
+        self.value = value
+
+        if alt:
+            self.color = self.alt_color
+        else:
+            self.color = self.normal_color
+
+        self.queue_draw()
+        self.present()
+        self.visible = True
+
+    def draw(self, widget, event):
+
+        cr = Gdk.cairo_create(widget.get_window())
+
+        bkg_color = (0.27, 0.27, 0.27)
+
+        cr.set_source_rgb(*bkg_color)
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.paint()
+
+        cr.set_source_rgb(*self.color)
+        cr.rectangle(30, 15, self.value*240, 10)
+        cr.fill()
+
+
+class TrayMonitor(dbus.service.Object):
+
+    def __init__(self, bus, path, name):
+
+        dbus.service.Object.__init__(self, bus, path, name)
 
         # Battery
         self.battery = {}
@@ -47,48 +137,71 @@ class Monitor:
         self.battery['status'] = 'Unknown'
         self.battery['level'] = 'NORMAL'
 
-        # Blanking
+        # Blanking/Suspend/RAM-clean
         self.blanking_allowed = True
-
-        # Suspend
         self.suspend_allowed = True
-
-        # RAM clean
         self.ram_clean_allowed = True
 
-        # Icon
-        self.icon = Gtk.StatusIcon()
-        self.set_icon('battery_full')
+        # Audio
+        self.audio_sink = ''
+        self.audio_muted = False
+        self.audio_volume = 0
 
-        self.icon.connect('activate',   self.on_right_click_event, 3, Gtk.get_current_event_time())
-        self.icon.connect('popup-menu', self.on_right_click_event)
-        self.icon.connect('scroll-event', self.on_scroll_event)
+        # Icon (Power)
+        self.icon_power = Gtk.StatusIcon()
+        self.set_power_icon('battery_full')
+        self.icon_power.set_has_tooltip(True)
+        self.icon_power.connect("query-tooltip", self.tooltip_power_query)
 
-        self.icon.set_has_tooltip(True)
-        self.icon.connect("query-tooltip", self.tooltip_query)
+        self.icon_power.connect('activate',   self.on_power_right_click_event, 3, Gtk.get_current_event_time())
+        self.icon_power.connect('popup-menu', self.on_power_right_click_event)
+        self.icon_power.connect('scroll-event', self.on_power_scroll_event)
 
-        Notify.init ("monitor")
+        self.create_power_menu()
 
-        self.create_menu()
+        # Icon (Volume)
+        self.icon_volume = Gtk.StatusIcon()
+        self.set_volume_icon(ICON_MUTE)
+        self.icon_volume.set_has_tooltip(True)
+        self.icon_volume.connect("query-tooltip", self.tooltip_volume_query)
 
-        self.update()
-        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update)
+        #self.icon_volume.connect('activate',   self.on_volume_right_click_event, 3, Gtk.get_current_event_time())
+        #self.icon_volume.connect('popup-menu', self.on_volume_right_click_event)
+        self.icon_volume.connect('scroll-event', self.on_volume_scroll_event)
+        self.icon_volume.connect('button-release-event', self.on_volume_button_release_event)
 
 
-    def set_icon(self, name):
-        self.icon.set_from_icon_name(name)
+        # Notifications and OSD
+        Notify.init("monitor")
 
-    def add_seperator(self):
-        m_item = Gtk.SeparatorMenuItem()
-        self.menu.append(m_item)
-        self.menu.show_all()
+        self.osd = OSD()
 
-    def on_left_click_event(self, icon, button):
-        print('click')
+        # Update power and audio
+        self.update_power()
+        self.update_volume()
 
-    def create_menu(self):
+        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_power)
+        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_volume)
 
-        self.menu = Gtk.Menu()
+
+    @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
+    def run(self):
+        Gtk.main()
+
+    @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
+    def close(self):
+        Gtk.main_quit()
+
+
+    def set_power_icon(self, name):
+        self.icon_power.set_from_icon_name(name)
+
+    def set_volume_icon(self, name):
+        self.icon_volume.set_from_icon_name(name)
+
+    def create_power_menu(self):
+
+        self.menu_power = Gtk.Menu()
 
         # Battery
         self.info_battery = Gtk.MenuItem()
@@ -99,12 +212,12 @@ class Monitor:
         sep2 = Gtk.SeparatorMenuItem.new()
         sep3 = Gtk.SeparatorMenuItem.new()
 
-        self.menu.append(self.info_battery)
-        self.menu.append(sep1)
-        self.menu.append(self.info_temp)
-        self.menu.append(sep2)
-        self.menu.append(self.info_ram)
-        self.menu.append(sep3)
+        self.menu_power.append(self.info_battery)
+        self.menu_power.append(sep1)
+        self.menu_power.append(self.info_temp)
+        self.menu_power.append(sep2)
+        self.menu_power.append(self.info_ram)
+        self.menu_power.append(sep3)
 
         self.item_pause_blank = Gtk.CheckMenuItem()
         self.item_pause_blank.set_label("Pause screen blank")
@@ -122,15 +235,18 @@ class Monitor:
         quit.set_label("Quit")
         quit.connect("activate", Gtk.main_quit)
 
-        self.menu.append(self.item_pause_blank)
-        self.menu.append(self.item_pause_suspend)
-        self.menu.append(self.item_pause_clean)
-        self.menu.append(quit)
+        self.menu_power.append(self.item_pause_blank)
+        self.menu_power.append(self.item_pause_suspend)
+        self.menu_power.append(self.item_pause_clean)
+        self.menu_power.append(quit)
 
-        self.menu.show_all()
+        self.menu_power.show_all()
 
 
-    def on_right_click_event(self, icon, button, time):
+    def on_power_left_click_event(self, icon, button):
+        print('click')
+
+    def on_power_right_click_event(self, icon, button, time):
 
         self.info_battery.set_label('%s, %i%%, %.2fmW' % (self.battery['status'], self.battery['percentage'], self.battery['power']))
 
@@ -140,22 +256,48 @@ class Monitor:
         ram = self.check_ram_usage()
         self.info_ram.set_label('Free RAM: %iMB' % (ram))
 
-        self.menu.popup(None, None, None, self.icon, button, time)
+        self.menu_power.popup(None, None, None, self.icon_power, button, time)
 
-    def on_scroll_event(self, icon, event):
+    def on_power_scroll_event(self, icon, event):
         direction = event.direction
         if direction == Gdk.ScrollDirection.UP:
             self.change_brightness(+1)
         elif direction == Gdk.ScrollDirection.DOWN:
             self.change_brightness(-1)
 
-    def show_notification(self, text, icon, urg):
-        # NotifyNotification *noti = notify_notification_new("batterytray", text, icon);
-        # notify_notification_set_urgency(noti, urg);
-        # notify_notification_show(noti, NULL);
-        # g_object_unref(G_OBJECT(noti));
-        return
+    def on_volume_left_click_event(self, icon, button):
+        pass
 
+    def on_volume_right_click_event(self, icon, button, time):
+        pass
+        # self.info_battery.set_label('%s, %i%%, %.2fmW' % (self.battery['status'], self.battery['percentage'], self.battery['volume']))
+
+        # temperature = self.check_cpu_temperature()
+        # self.info_temp.set_label('CPU temp: %iC, %iC' % (temperature[0], temperature[1]))
+
+        # ram = self.check_ram_usage()
+        # self.info_ram.set_label('Free RAM: %iMB' % (ram))
+
+        # self.menu_volume.popup(None, None, None, self.icon_volume, button, time)
+
+    def on_volume_scroll_event(self, icon, event):
+        direction = event.direction
+        if direction == Gdk.ScrollDirection.UP:
+            self.change_volume(+VOLUME_STEP)
+        elif direction == Gdk.ScrollDirection.DOWN:
+            self.change_volume(-VOLUME_STEP)
+
+    def on_volume_button_release_event(self, icon, event):
+        if event.button != 2:
+            return False
+
+        self.toggle_muted()
+        self.update_volume()
+
+        print(self.audio_volume)
+        self.osd.show(self.audio_volume/100., self.audio_muted)
+
+        return True
 
     ## blank screen functions
     def enable_blanking(self):
@@ -178,16 +320,6 @@ class Monitor:
     def toggle_ram_clean(self, arg):
         self.ram_clean_allowed = (not self.ram_clean_allowed)
 
-    def get_cmd_output(self, cmd):
-        try:
-            if isinstance(cmd, list):
-                output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
-            else:
-                output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, shell=True)
-        except subprocess.CalledProcessError:
-            return ''
-
-        return output.decode('utf8').strip()
 
     ## Brightness
     def get_current_brightness(self):
@@ -198,6 +330,7 @@ class Monitor:
         with open(F_BACKLIGHT_MAX) as max_file:
             return int(max_file.read().split('\n')[0])
 
+    @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
     def change_brightness(self, arg):
         current_value = self.get_current_brightness()
         max_value     = self.get_max_brightness()
@@ -224,12 +357,12 @@ class Monitor:
 
     ## RAM
     def check_ram_usage(self):
-        return int(self.get_cmd_output("free -m | grep Mem | awk '{print $7}'").split('\n')[0])
+        return int(get_cmd_output("free -m | grep Mem | awk '{print $7}'").split('\n')[0])
 
     ## Temperature
     def check_cpu_temperature(self):
 
-        out = self.get_cmd_output(['sensors',]).split('\n')
+        out = get_cmd_output(['sensors',]).split('\n')
 
         temperature = []
         for line in out:
@@ -247,7 +380,7 @@ class Monitor:
     def check_battery(self):
         pass
 
-    def update(self):
+    def update_power(self):
 
         status = 'Unknown';
         energy_now = -1
@@ -266,7 +399,6 @@ class Monitor:
                 status = 'Discharging'
             elif tmp == "Full\n":
                 status = 'Full'
-
 
         # read battery values
         energy_now  = float(open(F_ENERGY_NOW).read())
@@ -305,8 +437,8 @@ class Monitor:
             percentage = 0
 
         # update icon
-        icon_name = self.get_icon_name(status, percentage)
-        self.set_icon(icon_name)
+        icon_name = self.get_power_icon_name(status, percentage)
+        self.set_power_icon(icon_name)
 
         # show notification if necessary
         if status == self.battery['status'] and status == 'Discharging':
@@ -333,13 +465,13 @@ class Monitor:
         self.battery['time'] = (hours, minutes, seconds)
 
         # save to logfile
-        with open(LOGFILE, "a") as f:
-            today = datetime.datetime.today()
+        # with open(LOGFILE, "a") as f:
+        #     today = datetime.datetime.today()
 
-            date_str = today.strftime('%Y-%m-%d %H:%M:%S')
-            bat_str = '%02d%% %s %.2f' % (percentage, status, power)
+        #     date_str = today.strftime('%Y-%m-%d %H:%M:%S')
+        #     bat_str = '%02d%% %s %.2f' % (percentage, status, power)
 
-            f.write('%s %s\n' % (date_str, bat_str))
+        #     f.write('%s %s\n' % (date_str, bat_str))
 
         # suspend when reaches BATTERY_LEVEL_CRITICAL-1
         if self.suspend_allowed and status == 'Discharging' and percentage < (BATTERY_LEVEL_CRITICAL-2):
@@ -351,21 +483,21 @@ class Monitor:
         if self.ram_clean_allowed and ram_usage < RAM_LEFT_CRITICAL:
             os.system('killall chromium')
         elif ram_usage < RAM_LEFT_WARNING:
-            self.set_icon('software-update-urgent')
+            self.set_power_icon('software-update-urgent')
 
         temperatures = self.check_cpu_temperature()
         for temp in temperatures:
             if temp > CPU_TEMP_CRITITCAL:
-                self.set_icon('apport')
+                self.set_power_icon('apport')
                 break
 
         # Check discharging rate
         if status == 'Discharging' and power > 25.:
-            self.set_icon('apport')
+            self.set_power_icon('apport')
 
         return True
 
-    def tooltip_query(self, widget, x, y, keyboard_mode, tooltip):
+    def tooltip_power_query(self, widget, x, y, keyboard_mode, tooltip):
 
         #  update tooltip
         status = self.battery['status']
@@ -384,13 +516,7 @@ class Monitor:
 
         return True
 
-
-    def send_notification(self, msg, type_):
-        noti = Notify.Notification.new('Monitor', msg, type_)
-        noti.show()
-
-
-    def get_icon_name(self, status, percentage):
+    def get_power_icon_name(self, status, percentage):
 
         tmp = ''
         if status == 'Discharging':
@@ -422,11 +548,135 @@ class Monitor:
 
         return tmp
 
+    @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
+    def toggle_muted(self):
+        os.system('pactl set-sink-mute "%s" toggle' % self.audio_sink)
+        self.update_volume()
+
+    @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
+    def change_volume(self, arg):
+        if arg > 0:
+            if self.audio_volume >= 100:
+                return
+            cmd = 'pactl set-sink-volume %s +%i%%' % (self.audio_sink, arg)
+
+        elif arg < 0:
+            if self.audio_volume <= 0:
+                return
+            cmd = 'pactl set-sink-volume %s %i%%' % (self.audio_sink, arg)
+
+        os.system(cmd)
+
+        if self.audio_muted:
+            self.toggle_muted()
+
+        self.update_volume()
+
+    def update_volume(self):
+
+        self.audio_sink = get_cmd_output("pacmd list-sinks | awk '/* index:/{ print $3 }'")
+
+        muted  = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/muted:/{ print $2 }'")
+        volume = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/volume: front/{ print $5 }' | sed 's/%//g'")
+
+        self.audio_muted = bool(muted == 'yes')
+        self.audio_volume = int(volume)
+
+        if self.audio_muted:
+            icon_name = ICON_MUTE
+        else:
+            if self.audio_volume < 5:
+                icon_name = ICON_ZERO
+            elif self.audio_volume < 33:
+                icon_name = ICON_LOW
+            elif self.audio_volume < 66:
+                icon_name = ICON_MEDIUM
+            else:
+                icon_name = ICON_HIGH
+
+        self.set_volume_icon(icon_name)
+
+
+    def tooltip_volume_query(self, widget, x, y, keyboard_mode, tooltip):
+
+        #  update tooltip
+        volume = self.audio_volume
+
+        if self.audio_muted:
+            tooltip_text = "Volume: %d%% (muted)" % self.audio_volume
+        else:
+            tooltip_text = "Volume: %d%%" % self.audio_volume
+
+        tooltip.set_text(tooltip_text)
+
+        return True
+
+
+    def send_notification(self, msg, type_):
+        noti = Notify.Notification.new('Monitor', msg, type_)
+        noti.show()
+
     def run(self):
         Gtk.main()
 
 
+# class TrayMonitor():
+
+#     def __init__ (self, bus, path, name):
+
+#         dbus.service.Object.__init__(self, bus, path, name)
+
+#         #self.running = False
+#         self.monitor = Monitor()
+
+#     # @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='b')
+#     # def is_running(self):
+#     #     return self.running
+
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--quit', action='store_true', help='quit')
+
+    # Audio
+    parser.add_argument('-v', '--volume', type=float, help='Change volume')
+    parser.add_argument('-m', '--mute', action='store_true', help='Mute volume (toggle)')
+
+    # Brightness
+    parser.add_argument('-b', '--brightness', type=int, help='Change brightness')
+
+
+    args = parser.parse_args()
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    bus = dbus.SessionBus()
+    request = bus.request_name("org.traymon.Daemon", dbus.bus.NAME_FLAG_DO_NOT_QUEUE)
+
+    if request != dbus.bus.REQUEST_NAME_REPLY_EXISTS:
+        if args.quit:
+            print('not running')
+            return True
+        app = TrayMonitor(bus, '/', "org.traymon.Daemon")
+    else:
+        obj = bus.get_object("org.traymon.Daemon", "/")
+        app = dbus.Interface(obj, "org.traymon.Daemon")
+
+
+    if args.volume is not None:
+        app.change_volume(args.volume)
+    elif args.mute:
+        app.toggle_muted()
+
+    elif args.brightness is not None:
+        app.change_brightness(args.brightness)
+
+    elif args.quit:
+        app.close()
+    else:
+        app.run()
+
+    return True
 
 if __name__ == '__main__':
-    m = Monitor()
-    m.run()
+    sys.exit(main())
