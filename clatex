@@ -608,6 +608,7 @@ def main():
     parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine: pdflatex (default), xelatex, lualatex, ...')
 
     parser.add_argument('--slides', help='create slides template')
+    parser.add_argument('--slidesdir', help='create slides directory with template')
 
 
     global args
@@ -616,16 +617,26 @@ def main():
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
 
-    # templates
-    if args.slides is not None:
-        name = args.slides
+    # templates (create and exit!)
+    if args.slidesdir is not None:
+        name = args.slidesdir
 
-        print_msg('Created slides template in %s' % name, GOOD)
+        print_msg('Creating slides directory in %s' % name, GOOD)
 
         os.system('mkdir -p %s' % name)
         os.system('mkdir -p %s/images' % name)
 
-        with open(args.slides+'/slides.tex', 'w+') as f:
+        with open('%s/slides.tex' % name, 'w+') as f:
+            f.write(template_slides)
+
+        return 0
+
+    elif args.slides is not None:
+        name = args.slides
+
+        print_msg('Created slides template: %s.tex' % name, GOOD)
+
+        with open('%s.tex' % name, 'w+') as f:
             f.write(template_slides)
 
         return 0
