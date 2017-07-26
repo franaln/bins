@@ -19,7 +19,8 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 from gi.repository import Gtk, Gdk, GObject, Notify, GLib
 
-UPDATE_INTERVAL = 5 # in secs
+UPDATE_AUDIO_INTERVAL = 5  # in secs
+UPDATE_POWER_INTERVAL = 15 # in secs
 
 # POWER
 BATTERY_LEVEL_LOW       = 15 # in %
@@ -88,7 +89,7 @@ class OSD(Gtk.Window):
 
         self.visible = False
 
-        GLib.timeout_add(1000, self.close)
+        GLib.timeout_add_seconds(1, self.close)
 
     def close(self):
         # if not self.visible:
@@ -180,8 +181,8 @@ class TrayMonitor(dbus.service.Object):
         self.update_power()
         self.update_volume()
 
-        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_power)
-        GObject.timeout_add_seconds(UPDATE_INTERVAL, self.update_volume)
+        GLib.timeout_add_seconds(UPDATE_POWER_INTERVAL, self.update_power)
+        GLib.timeout_add_seconds(UPDATE_AUDIO_INTERVAL, self.update_volume)
 
 
     @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
@@ -294,7 +295,6 @@ class TrayMonitor(dbus.service.Object):
         self.toggle_muted()
         self.update_volume()
 
-        print(self.audio_volume)
         self.osd.show(self.audio_volume/100., self.audio_muted)
 
         return True
@@ -504,7 +504,7 @@ class TrayMonitor(dbus.service.Object):
 
         if status == 'Discharging':
             h, m, s = self.battery['time']
-            tooltip_text = "Discharging, %i%% (%02d:%02d remaining)\n using %2.2f W" % (self.battery['percentage'], h, m, self.battery['power'])
+            tooltip_text = "Discharging, %i%% (%02d:%02d remaining)\nusing %2.2f W" % (self.battery['percentage'], h, m, self.battery['power'])
         elif status == 'Charging':
             tooltip_text = "Charging, %i%%" % self.battery['percentage']
         elif status == 'Full':
@@ -574,13 +574,18 @@ class TrayMonitor(dbus.service.Object):
 
     def update_volume(self):
 
-        self.audio_sink = get_cmd_output("pacmd list-sinks | awk '/* index:/{ print $3 }'")
+        try:
+            self.audio_sink = get_cmd_output("pacmd list-sinks | awk '/* index:/{ print $3 }'")
 
-        muted  = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/muted:/{ print $2 }'")
-        volume = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/volume: front/{ print $5 }' | sed 's/%//g'")
+            muted  = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/muted:/{ print $2 }'")
+            volume = get_cmd_output("pacmd list-sinks | grep -A 15 '* index' | awk '/volume: front/{ print $5 }' | sed 's/%//g'")
 
-        self.audio_muted = bool(muted == 'yes')
-        self.audio_volume = int(volume)
+            self.audio_muted = bool(muted == 'yes')
+            self.audio_volume = int(float(volume))
+        except:
+            self.audio_sink = ''
+            self.audio_muted = False
+            self.audio_volume = 0.
 
         if self.audio_muted:
             icon_name = ICON_MUTE
@@ -596,6 +601,7 @@ class TrayMonitor(dbus.service.Object):
 
         self.set_volume_icon(icon_name)
 
+        return True
 
     def tooltip_volume_query(self, widget, x, y, keyboard_mode, tooltip):
 
