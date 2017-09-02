@@ -18,7 +18,7 @@ C_RESET   = '\033[0m'
 
 INFO = 0
 GOOD = 1
-WARN = 2
+WARNING = 2
 ERROR  = 3
 
 def print_msg(msg, level):
@@ -203,9 +203,9 @@ def bytes_to_human(num):
     num = int(num)
     for unit in ['','K','M','G','T','P','E','Z']:
         if abs(num) < 1024.0:
-            return "%3.1f%sB" % (num, unit)
+            return "%3.1f %sB" % (num, unit)
         num /= 1024.0
-    return "%.1f%sB" % (num, 'Y')
+    return "%.1f %sB" % (num, 'Y')
 
 
 def colorize_latex_output(logfile, show=True):
