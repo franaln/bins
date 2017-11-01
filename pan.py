@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import sys
 import argparse
 
@@ -11,7 +13,7 @@ parser.add_argument('--fs', type=float, help='Salt fraction')
 parser.add_argument('--fy', type=float, help='Yeast fraction')
 parser.add_argument('--fx', type=float, help='Sourdough fraction')
 
-parser.add_argument('-x', dest='sourdough', action='store_true', help='Use sourdough instead of yeast (assuming 100% hidratation)')
+parser.add_argument('-x', '--sourdough', action='store_true', help='Use sourdough instead of yeast (assuming 100%% hidratation)')
 
 args = parser.parse_args()
 
@@ -36,23 +38,23 @@ if args.sourdough:
         # calc flour weight
         w_t = args.total
 
-        w_f = w_t / (1 + f_w + f_x + f_s)
+        w_f = w_t / (1 + f_w + f_s)
 
     elif args.flour:
 
         w_f = args.flour
 
-        w_t = w_f * (1 + f_w + f_x + f_s)
+        w_t = w_f * (1 + f_w + f_s)
 
 
     w_x = w_f * f_x
 
     w_w = w_f * f_w
     w_s = w_f * f_s
-    w_y = w_f * f_y
 
     w_f -= 0.5*w_x
     w_w -= 0.5*w_x
+
 
 else:
     if args.total:
