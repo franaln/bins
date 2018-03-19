@@ -56,14 +56,14 @@ if args.download:
     if in_lxplus:
         cmd1 = 'cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;'
     else:
-        cmd1 = 'ssh falonso@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"'
+        cmd1 = 'ssh {USERNAME}@lxplus.cern.ch "cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;"'.format(USERNAME=args.username)
 
     os.system(cmd1)
 
     if in_lxplus:
-        cmd2 = 'curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.%s*&days=10&json"' % args.username
+        cmd2 = 'curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.{USERNAME}*&days=10&json"' % args.username
     else:
-        cmd2 = 'ssh falonso@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.%s*&days=10\&json""' % args.username
+        cmd2 = 'ssh {USERNAME}@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.{USERNAME}*&days=10\&json""'.format(USERNAME=args.username)
 
     output = subprocess.check_output(cmd2, shell=True)
 
