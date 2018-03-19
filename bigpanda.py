@@ -6,7 +6,20 @@ import json
 import argparse
 import subprocess
 
-parser = argparse.ArgumentParser(description='Show jobs from bigpanda')
+def usage(name=None):
+        return '''bigpanda.py usage
+-----------------
+
+Download jobs info from BigPanda:
+
+    bigpanda.py --download -u USERNAME [-f jobs.json]
+
+Show (and filter) jobs:
+
+    bigpanda.py --show [--taskname XXX] [--status done] [--sort taskname]
+'''
+
+parser = argparse.ArgumentParser(description='Show jobs from bigpanda', usage=usage())
 
 parser.add_argument('-d', '--download', dest='download', action='store_true', help='Download jobs from bigpanda')
 parser.add_argument('-s', '--show', dest='show', action='store_true', help='Show jobs from bigpanda')
@@ -24,6 +37,10 @@ parser.add_argument('--sort', dest='sort', default='taskname',  help='Sort by ta
 
 
 args = parser.parse_args()
+
+if not args.download and not args.show:
+    print(usage())
+    sys.exit(0)
 
 
 jobs_file = args.jobs_file
