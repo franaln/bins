@@ -92,7 +92,6 @@ $body$
 \end{document}
 """
 
-
 template_slides = r"""
 \documentclass[center,10pt,cm]{beamer}
 
@@ -587,28 +586,29 @@ def main():
     parser = argparse.ArgumentParser(description='Compile latex')
 
     parser.add_argument('texfile', nargs='?', help='')
-    parser.add_argument('-f', dest='force',   action='store_true', help='force compilation')
-    parser.add_argument('-c', dest='clean',   action='store_true', help='clean all')
-    parser.add_argument('-g', dest='debug',   action='store_true', help='show warnings')
-    parser.add_argument('-q', dest='quiet',   action='store_true', help='No prints')
-    parser.add_argument('-o', dest='open',    action='store_true', help='open pdf')
-    parser.add_argument('-v', dest='verbose', action='store_true', help='show latex output')
-    parser.add_argument('-b', dest='bibtex',  action='store_true', help='compile bibliography using bibtex')
-    parser.add_argument('-a', dest='fast',    action='store_true', help='compile only once')
-    parser.add_argument('-j', dest='only',    default='', help='include only')
-    parser.add_argument('-t', '--tex', action='store_true', help='only create tex. don\'t compile')
-    parser.add_argument('-z', '--tmp', action='store_true', help='compile in /tmp.')
-    parser.add_argument('--tikz',  action='store_true', help='compile tikz picture')
-    parser.add_argument('--table', action='store_true', help='compile table')
-    parser.add_argument('--plain', action='store_true', help='compile plain text')
-    parser.add_argument('--pdfs', action='store_true', help='merge pdfs in slides')
-    parser.add_argument('--filter', help='filter files (to use with --pdfs)')
-    parser.add_argument('--loop', action='store_true', help='create and compile every 5 seconds.')
+    parser.add_argument('-f', dest='force',   action='store_true', help='Force compilation')
+    parser.add_argument('-c', dest='clean',   action='store_true', help='Clean all')
+    parser.add_argument('-g', dest='debug',   action='store_true', help='Show warnings')
+    parser.add_argument('-q', dest='quiet',   action='store_true', help='No prints to std out')
+    parser.add_argument('-o', dest='output',  help='Output pdf name')
+    parser.add_argument('-p', dest='open_pdf', action='store_true', help='Open final pdf')
+    parser.add_argument('-v', dest='verbose', action='store_true', help='Show latex output')
+    parser.add_argument('-b', dest='bibtex',  action='store_true', help='Compile bibliography using bibtex')
+    parser.add_argument('-a', dest='fast',    action='store_true', help='Compile only once')
+    parser.add_argument('-j', dest='only',    default='', help='Include only')
+    parser.add_argument('-t', '--tex', action='store_true', help='Only create tex, don\'t compile')
+    parser.add_argument('-z', '--tmp', action='store_true', help='Compile in /tmp.')
+    parser.add_argument('--tikz',  action='store_true', help='Compile tikz picture')
+    parser.add_argument('--table', action='store_true', help='Compile table')
+    parser.add_argument('--plain', action='store_true', help='Compile plain text')
+    parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
+    parser.add_argument('--filter', help='Filter files (to use with --pdfs)')
+    parser.add_argument('--loop', action='store_true', help='Create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
-    parser.add_argument('-e', '--engine',  default='pdflatex', help='latex engine: pdflatex (default), xelatex, lualatex, ...')
+    parser.add_argument('-e', '--engine',  default='pdflatex', help='Latex engine: pdflatex (default), xelatex, lualatex, ...')
 
-    parser.add_argument('--slides', help='create slides template')
-    parser.add_argument('--slidesdir', help='create slides directory with template')
+    parser.add_argument('--slides', help='Create slides template')
+    parser.add_argument('--slidesdir', help='Create slides directory with template')
 
 
     global args
@@ -665,7 +665,7 @@ def main():
         return 1
 
     main_name = os.path.splitext(os.path.basename(main_tex))[0]
-    main_pdf = main_name + '.pdf'
+    main_pdf = '%s.pdf' % main_name #if args.output is None else '%s.pdf' % args.output
 
     if args.tex:
         return 0
@@ -713,7 +713,7 @@ def main():
                 return 0
 
 
-    if args.open:
+    if args.open_pdf:
         if args.tmp:
             subprocess.call(['open', clatex_dir+'/'+main_pdf])
         else:
