@@ -7,38 +7,43 @@ import argparse
 import subprocess
 
 def usage(name=None):
-        return '''bigpanda.py usage
------------------
+    return '''bigpanda.py
+-----------
 
 Download jobs info from BigPanda:
 
-    bigpanda.py --download -u USERNAME [-f jobs.json]
+    bigpanda.py --download -u USERNAME [-o jobs.json] [-f filter] [-d days]
 
-Show (and filter) jobs:
+Print (filter/sort) jobs:
 
-    bigpanda.py --show [-f jobs.json] [--taskname XXX] [--status done] [--sort taskname]
+    bigpanda.py --print [-o jobs.json] [--taskname XXX] [--status done] [--sort taskname]
 '''
 
 parser = argparse.ArgumentParser(description='Show jobs from bigpanda', usage=usage())
 
-parser.add_argument('-d', '--download', dest='download', action='store_true', help='Download jobs from bigpanda')
-parser.add_argument('-s', '--show', dest='show', action='store_true', help='Show jobs from bigpanda')
+parser.add_argument('-o', dest='jobs_file', default='jobs.json',  help='Jobs file (default: jobs.json)')
+parser.add_argument('-d', '--download', dest='download_jobs', action='store_true', help='Download jobs from bigpanda')
+parser.add_argument('-p', '--print', dest='print_jobs', action='store_true', help='Show jobs from bigpanda')
 
-parser.add_argument('-f', dest='jobs_file', default='jobs.json',  help='Jobs file (default: jobs.json)')
+# Bigpanda download
 parser.add_argument('-u', dest='username', default=os.environ['USER'], help='Username')
+parser.add_argument('-f', dest='download_filter', help='Download only tasks with name matching this (default: user.USERNAME.*)')
+parser.add_argument('--days', dest='days_filter', default='7', help='Download tasks for the last X days (default: 7)')
 
 # Filter
-parser.add_argument('--taskname', dest='taskname', help='Filter by taskname')
-parser.add_argument('--status',   dest='status',   help='Filter by status')
-parser.add_argument('--taskid',   dest='taskid',   help='Filter by taskid')
+parser.add_argument('-i', '--taskid',   dest='taskid',   help='Filter by taskid')
+parser.add_argument('-n', '--taskname', dest='taskname', help='Filter by taskname')
+parser.add_argument('-s', '--status',   dest='status',   help='Filter by status')
 
 # Sort
 parser.add_argument('--sort', dest='sort', default='taskname',  help='Sort by taskname/status (default: taskname)')
 
+parser.add_argument('--all', dest='show_all', action='store_true', help='Show the full job dict')
+
 
 args = parser.parse_args()
 
-if not args.download and not args.show:
+if not args.download_jobs and not args.print_jobs:
     print(usage())
     sys.exit(0)
 
@@ -46,13 +51,14 @@ if not args.download and not args.show:
 jobs_file = args.jobs_file
 
 # Dowload jobs
-if args.download:
+if args.download_jobs:
 
     if os.path.isfile(jobs_file):
         os.system('rm %s' % jobs_file)
 
     in_lxplus = ('HOSTNAME' in os.environ and '.cern.ch' in os.environ['HOSTNAME'])
 
+    # Download cookie
     if in_lxplus:
         cmd1 = 'cern-get-sso-cookie -u https://bigpanda.cern.ch/ -o bigpanda.cookie.txt;'
     else:
@@ -60,12 +66,18 @@ if args.download:
 
     os.system(cmd1)
 
+
+    # Download jobs data
+    filter_str = 'user.%s*' % args.username if args.download_filter is None else args.download_filter
     if in_lxplus:
-        cmd2 = 'curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.{USERNAME}*&days=10&json"' % args.username
+        cmd2 = 'curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={0}&days={1}&json"'.format(filter_str, args.days_filter)
     else:
-        cmd2 = 'ssh {USERNAME}@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname=user.{USERNAME}*&days=10\&json""'.format(USERNAME=args.username)
+        cmd2 = 'ssh {0}@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={1}&days={2}\&json""'.format(args.username, filter_str, args.days_filter)
 
     output = subprocess.check_output(cmd2, shell=True)
+
+    if not isinstance(output, str):
+        output = output.decode("utf-8")
 
     with open(jobs_file, 'w') as f:
         f.write(output)
@@ -96,7 +108,7 @@ def print_job(j):
 
 
 
-if args.show:
+if args.print_jobs:
 
     with open(jobs_file) as f:
 
@@ -118,4 +130,7 @@ if args.show:
 
         # Show jobs
         for j in sorted(jobs, key=lambda t: t[args.sort]):
-            print_job(j)
+            if args.show_all:
+                print(j)
+            else:
+                print_job(j)
