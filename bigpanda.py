@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os
 import sys
 import json
@@ -13,8 +15,9 @@ parser.add_argument('-f', dest='jobs_file', default='jobs.json',  help='Jobs fil
 parser.add_argument('-u', dest='username', default=os.environ['USER'], help='Username')
 
 # Filter
-parser.add_argument('--name',   dest='taskname', help='Filter by taskname')
-parser.add_argument('--status', dest='status',   help='Filter by status')
+parser.add_argument('--taskname', dest='taskname', help='Filter by taskname')
+parser.add_argument('--status',   dest='status',   help='Filter by status')
+parser.add_argument('--taskid',   dest='taskid',   help='Filter by taskid')
 
 # Sort
 parser.add_argument('--sort', dest='sort', default='taskname',  help='Sort by taskname/status (default: taskname)')
@@ -70,6 +73,10 @@ if args.show:
         # Filter status
         if args.status is not None:
             jobs = [ j for j in jobs if args.status == j['status'] ]
+
+        # Filter taksID
+        if args.taskid is not None:
+            jobs = [ j for j in jobs if args.taskid == str(j['jeditaskid']) ]
 
 
 
