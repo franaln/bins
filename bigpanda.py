@@ -16,7 +16,7 @@ Download jobs info from BigPanda:
 
 Show (and filter) jobs:
 
-    bigpanda.py --show [--taskname XXX] [--status done] [--sort taskname]
+    bigpanda.py --show [-f jobs.json] [--taskname XXX] [--status done] [--sort taskname]
 '''
 
 parser = argparse.ArgumentParser(description='Show jobs from bigpanda', usage=usage())
