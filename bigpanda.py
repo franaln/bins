@@ -82,13 +82,10 @@ def print_job(j):
     nfiles_failed = dsinfo['nfilesfailed']
     nfiles_finished = dsinfo['nfilesfinished']
 
-    job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5}'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles)
-
     if int(nfiles_failed) > 0:
         job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5} (failed: {5: >5})'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles, nfiles_failed)
     else:
         job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5}'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles)
-
 
     if j['status'] == 'done':
         print('\033[0;32m%s\033[0m' % job_text)
