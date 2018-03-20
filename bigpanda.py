@@ -38,7 +38,10 @@ parser.add_argument('-s', '--status',   dest='status',   help='Filter by status'
 # Sort
 parser.add_argument('--sort', dest='sort', default='taskname',  help='Sort by taskname/status (default: taskname)')
 
-parser.add_argument('--all', dest='show_all', action='store_true', help='Show the full job dict')
+# Other options
+parser.add_argument('--all',   dest='show_all', action='store_true', help='Show the full job dict')
+parser.add_argument('--quiet', dest='show_taskname_only', action='store_true', help='Show taskname only')
+parser.add_argument('--full',  dest='show_full_stats', action='store_true', help='Show full stats for matching jobs')
 
 
 args = parser.parse_args()
@@ -70,7 +73,7 @@ if args.download_jobs:
     # Download jobs data
     filter_str = 'user.%s*' % args.username if args.download_filter is None else args.download_filter
     if in_lxplus:
-        cmd2 = 'curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={0}&days={1}&json"'.format(filter_str, args.days_filter)
+        cmd2 = 'curl --progress-bar -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={0}&days={1}&json"'.format(filter_str, args.days_filter)
     else:
         cmd2 = 'ssh {0}@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={1}&days={2}\&json""'.format(args.username, filter_str, args.days_filter)
 
@@ -94,10 +97,10 @@ def print_job(j):
     nfiles_failed = dsinfo['nfilesfailed']
     nfiles_finished = dsinfo['nfilesfinished']
 
+    job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5}'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles)
+
     if int(nfiles_failed) > 0:
-        job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5} (failed: {5: >5})'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles, nfiles_failed)
-    else:
-        job_text = '{0: <10} {1: <125} {2: <15} {3: >5}/{4: >5}'.format(j['jeditaskid'], j['taskname'], j['status'], nfiles_finished, nfiles)
+        job_text += ' (failed: {0: >5})'.format(nfiles_failed)
 
     if j['status'] == 'done':
         print('\033[0;32m%s\033[0m' % job_text)
@@ -106,6 +109,38 @@ def print_job(j):
     else:
         print(job_text)
 
+
+def print_full_stats(jobs):
+
+    total_nfiles = 0
+    total_nfiles_finished = 0
+    total_nfiles_failed = 0
+    for j in jobs:
+
+        dsinfo = j['dsinfo']
+
+        total_nfiles += int(dsinfo['nfiles'])
+        total_nfiles_failed += int(dsinfo['nfilesfailed'])
+        total_nfiles_finished += int(dsinfo['nfilesfinished'])
+
+
+
+    text = 'Full stats >    %i Tasks |  %.2f%% failed | %.2f%% finished' % (len(jobs), total_nfiles_failed/float(total_nfiles), total_nfiles_finished/float(total_nfiles))
+    status = 'done' if (total_nfiles == total_nfiles_finished and total_nfiles_failed == 0) else 'running'
+
+    job_text = '{0: <136} {1: <15} {2: >5}/{3: >5}'.format(text, status, total_nfiles_finished, total_nfiles)
+
+    if int(total_nfiles_failed) > 0:
+        job_text += ' (failed: {0: >5})'.format(nfiles_failed)
+
+
+    print('-'*165)
+    if status == 'done':
+        print('\033[0;32m%s\033[0m' % job_text)
+    elif int(total_nfiles_failed) > 0:
+        print('\033[0;31m%s\033[0m' % job_text)
+    else:
+        print(job_text)
 
 
 if args.print_jobs:
@@ -127,10 +162,14 @@ if args.print_jobs:
             jobs = [ j for j in jobs if args.taskid == str(j['jeditaskid']) ]
 
 
-
         # Show jobs
         for j in sorted(jobs, key=lambda t: t[args.sort]):
             if args.show_all:
                 print(j)
+            elif args.show_taskname_only:
+                print(j['taskname'])
             else:
                 print_job(j)
+
+        if args.show_full_stats:
+            print_full_stats(jobs)
