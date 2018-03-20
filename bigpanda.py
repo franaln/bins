@@ -131,7 +131,7 @@ def print_full_stats(jobs):
     job_text = '{0: <136} {1: <15} {2: >5}/{3: >5}'.format(text, status, total_nfiles_finished, total_nfiles)
 
     if int(total_nfiles_failed) > 0:
-        job_text += ' (failed: {0: >5})'.format(nfiles_failed)
+        job_text += ' (failed: {0: >5})'.format(total_nfiles_failed)
 
 
     print('-'*165)
