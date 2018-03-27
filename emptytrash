@@ -1,3 +1,0 @@
-#! /usr/bin/bash
-
-rm -Rf /home/fran/.local/share/Trash/files/*
