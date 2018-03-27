@@ -36,12 +36,14 @@ parser.add_argument('-n', '--taskname', dest='taskname', help='Filter by tasknam
 parser.add_argument('-s', '--status',   dest='status',   help='Filter by status')
 
 # Sort
-parser.add_argument('--sort', dest='sort', default='taskname',  help='Sort by taskname/status (default: taskname)')
+parser.add_argument('--sort', dest='sort', default='jeditaskid',  help='Sort by taskname/status (default: jeditaskid)')
 
 # Other options
 parser.add_argument('--all',   dest='show_all', action='store_true', help='Show the full job dict')
 parser.add_argument('--quiet', dest='show_taskname_only', action='store_true', help='Show taskname only')
 parser.add_argument('--full',  dest='show_full_stats', action='store_true', help='Show full stats for matching jobs')
+
+parser.add_argument('--retry',  dest='retry', action='store_true', help='')
 
 
 args = parser.parse_args()
@@ -71,11 +73,17 @@ if args.download_jobs:
 
 
     # Download jobs data
-    filter_str = 'user.%s*' % args.username if args.download_filter is None else args.download_filter
-    if in_lxplus:
-        cmd2 = 'curl --progress-bar -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={0}&days={1}&json"'.format(filter_str, args.days_filter)
+    # if args.taskid is not None:
+    #     filter_str = 'jeditaskid={0}'.format(args.taskid)
+    if args.download_filter:
+        filter_str = 'taskname={0}&days={1}'.format(args.download_filter, args.days_filter)
     else:
-        cmd2 = 'ssh {0}@lxplus.cern.ch "curl -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?taskname={1}&days={2}\&json""'.format(args.username, filter_str, args.days_filter)
+        filter_str = 'taskname=user.%s*&days=%s' % (args.username, args.days_filter)
+
+    if in_lxplus:
+        cmd2 = 'curl --progress-bar -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?{0}&json"'.format(filter_str)
+    else:
+        cmd2 = 'ssh {0}@lxplus.cern.ch "curl --progress-bar -b ~/bigpanda.cookie.txt -H \'Accept: application/json\' -H \'Content-Type: application/json\' "https://bigpanda.cern.ch/tasks/?{1}\&json""'.format(args.username, filter_str)
 
     output = subprocess.check_output(cmd2, shell=True)
 
@@ -124,8 +132,13 @@ def print_full_stats(jobs):
         total_nfiles_finished += int(dsinfo['nfilesfinished'])
 
 
+    if int(total_nfiles) == 0:
+        return
 
-    text = 'Full stats >    %i Tasks |  %.2f%% failed | %.2f%% finished' % (len(jobs), total_nfiles_failed/float(total_nfiles), total_nfiles_finished/float(total_nfiles))
+    perc_finished = 100*total_nfiles_finished/float(total_nfiles)
+    perc_failed   = 100*total_nfiles_failed/float(total_nfiles)
+
+    text = 'Full stats >    %i Tasks |  %.2f%% failed | %.2f%% finished' % (len(jobs), perc_failed, perc_finished)
     status = 'done' if (total_nfiles == total_nfiles_finished and total_nfiles_failed == 0) else 'running'
 
     job_text = '{0: <136} {1: <15} {2: >5}/{3: >5}'.format(text, status, total_nfiles_finished, total_nfiles)
@@ -151,11 +164,26 @@ if args.print_jobs:
 
         # Filter task name
         if args.taskname is not None:
-            jobs = [ j for j in jobs if args.taskname in j['taskname'] ]
+            if '&' in args.taskname:
+                filter_taskname = args.taskname.split('&')
+                jobs = [ j for j in jobs if all([ taskname in j['taskname'] for taskname in filter_taskname ]) ]
+            elif  '|' in args.taskname:
+                filter_taskname = args.taskname.split('|')
+                jobs = [ j for j in jobs if any([ taskname in j['taskname'] for taskname in filter_taskname ]) ]
+            else:
+                jobs = [ j for j in jobs if args.taskname in j['taskname'] ]
+
 
         # Filter status
         if args.status is not None:
-            jobs = [ j for j in jobs if args.status == j['status'] ]
+            if '&' in args.status:
+                filter_status = args.status.split('&')
+                jobs = [ j for j in jobs if all([ status in j['status'] for status in filter_status ]) ]
+            elif  '|' in args.status:
+                filter_status = args.status.split('|')
+                jobs = [ j for j in jobs if any([ status in j['status'] for status in filter_status ]) ]
+            else:
+                jobs = [ j for j in jobs if args.status in j['status'] ]
 
         # Filter taksID
         if args.taskid is not None:
@@ -173,3 +201,11 @@ if args.print_jobs:
 
         if args.show_full_stats:
             print_full_stats(jobs)
+
+        if args.retry:
+            cmd = 'pbook -c "sync()"'
+            os.system(cmd)
+
+            for j in jobs:
+                cmd = 'pbook -c "retry(%i)"' % j['jeditaskid']
+                os.system(cmd)
