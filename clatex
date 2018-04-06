@@ -540,6 +540,12 @@ def create_pdfs_tex(output_tex, filter_):
 
         title = img[:-4].replace('_', '\_')
 
+        if len(title) > 60:
+            title = '{\\scriptsize %s}' % title
+        elif len(title) > 45:
+            title = '{\\small %s}' % title
+
+
         body += r"""
 \begin{frame}{%s}
     \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
