@@ -41,7 +41,7 @@ parser.add_argument('--sort', dest='sort', default='jeditaskid',  help='Sort by 
 # Other options
 parser.add_argument('--all',   dest='show_all', action='store_true', help='Show the full job dict')
 parser.add_argument('--quiet', dest='show_taskname_only', action='store_true', help='Show taskname only')
-parser.add_argument('--full',  dest='show_full_stats', action='store_true', help='Show full stats for matching jobs')
+parser.add_argument('--stat',  dest='show_full_stats', action='store_true', help='Show full stats for matching jobs')
 
 parser.add_argument('--retry',  dest='retry', action='store_true', help='')
 
