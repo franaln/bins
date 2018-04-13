@@ -410,7 +410,7 @@ def get_or_create_tex():
             filters = args.filter.split(',')
 
             for pdf in pdfs:
-                if all([ft in i for ft in filters]):
+                if all([ft in pdf for ft in filters]):
                     new_pdfs.append(pdf)
 
             pdfs = new_pdfs
