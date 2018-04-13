@@ -617,7 +617,6 @@ class TrayMonitor(dbus.service.Object):
 
         return True
 
-
     def send_notification(self, msg, type_):
         noti = Notify.Notification.new('Monitor', msg, type_)
         noti.show()
@@ -626,22 +625,9 @@ class TrayMonitor(dbus.service.Object):
         Gtk.main()
 
 
-# class TrayMonitor():
-
-#     def __init__ (self, bus, path, name):
-
-#         dbus.service.Object.__init__(self, bus, path, name)
-
-#         #self.running = False
-#         self.monitor = Monitor()
-
-#     # @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='b')
-#     # def is_running(self):
-#     #     return self.running
-
-
 
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', '--quit', action='store_true', help='quit')
 
@@ -651,7 +637,6 @@ def main():
 
     # Brightness
     parser.add_argument('-b', '--brightness', type=int, help='Change brightness')
-
 
     args = parser.parse_args()
 

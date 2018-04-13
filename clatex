@@ -234,13 +234,15 @@ def colorize_latex_output(logfile, show=True):
                 pages = sline[4][1:]
                 size = bytes_to_human(sline[6])
 
-                msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (name, pages, size, n_warning, n_error)
+                compile_info = (pages, size, n_warning, n_error)
+
+                #msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (name, pages, size, n_warning, n_error)
 
             except:
-                msg = line
+                pass #msg = line
 
-            if show:
-                print_msg(msg, GOOD)
+            # if show:
+            #     print_msg(msg, GOOD)
 
         elif 'No pages of output' in line:
             compile_ok = False
@@ -269,7 +271,7 @@ def colorize_latex_output(logfile, show=True):
                 print_msg('%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]), ERROR)
             n_error += 1
 
-    return compile_ok
+    return compile_ok, compile_info
 
 
 def colorize_bibtex_output(logfile):
@@ -295,15 +297,16 @@ def colorize_bibtex_output(logfile):
                 print_msg('%s %s %s' (m.group("kind"), int(m.group("line")),  m.group("text")), INFO)
 
 
-def compile_tex(texfile):
+def compile_tex(input_path, output_path):
 
-    name = os.path.basename(texfile)[:-4]
-    pdf_file = clatex_dir+'/%s.pdf' % name
+    name = os.path.basename(input_path)[:-4]
+
+    tmp_pdf_file = clatex_dir + '/%s.pdf' % name
 
     if args.only:
-        filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, texfile)
+        filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, input_path)
     else:
-        filecmd = texfile
+        filecmd = input_path
 
     if args.verbose:
         pdflatex_cmd = '%s -output-directory=%s -file-line-error %s' % (args.engine, clatex_dir, filecmd)
@@ -321,9 +324,9 @@ def compile_tex(texfile):
 
     logfile = '%s/%s.log' % (clatex_dir, name)
     if os.path.isfile(logfile):
-        compile_ok = colorize_latex_output(logfile, False)
+        compile_ok, compile_info = colorize_latex_output(logfile, False)
 
-    if not os.path.isfile(pdf_file):
+    if not os.path.isfile(tmp_pdf_file):
         compile_ok = False
 
     if compile_ok and args.bibtex:
@@ -353,88 +356,126 @@ def compile_tex(texfile):
 
     logfile = '%s/%s.log' % (clatex_dir, name)
     if os.path.isfile(logfile):
-        compile_ok = colorize_latex_output(logfile)
+        compile_ok, compile_info = colorize_latex_output(logfile)
 
-    if compile_ok and os.path.isfile(pdf_file) and not args.tmp:
-
-        pdf_file_final = '%s.pdf' % name
+    if compile_ok and os.path.isfile(tmp_pdf_file) and not args.tmp:
 
         if args.table:
-            crop_pdf(pdf_file, pdf_file_final)
+            crop_pdf(tmp_pdf_file, output_path)
         else:
-            subprocess.call(['mv', pdf_file, pdf_file_final])
+            subprocess.call(['mv', tmp_pdf_file, output_path])
 
+        pages, size, n_warning, n_error = compile_info
+        msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (output_path, pages, size, n_warning, n_error)
+        print_msg(msg, GOOD)
 
     return compile_ok
 
 
-def get_tex():
+def get_or_create_tex():
 
-    tex = None
-    if args.texfile is not None and os.path.isfile(args.texfile):
+    """
+    Find or create tex file
 
-        fname = args.texfile
-        name = os.path.splitext(os.path.basename(fname))[0]
+    if --tikz, --table or --plain: create new compilable tex file
+    if --pdfs: create tex file from input pdfs
+    """
 
-
-        # check tikz/table/plain
-        text = open(fname).read()
-
-        if r'\documentclass' not in text:
-            if r'\begin{tikzpicture}' in text:
-                args.tikz = True
-            elif r'\begin{tabular}' in text:
-                args.table = True
-            else:
-                args.plain = True
-
-
-        if fname.endswith('.md'):
-
-            tex = name + '.tex'
-
-            print_msg('Converting %s -> %s' % (fname, tex), INFO)
-
-            template_file = '%s/template.beamer' % clatex_dir
-
-            if not os.path.exists(template_file):
-                with open(template_file, 'wt', encoding='utf-8') as of:
-                    of.write(template_pandoc)
-
-            pandoc_cmd = 'pandoc -t beamer --template=%s %s -o %s' % (template_file, fname, tex)
-            subprocess.call(pandoc_cmd, shell=True)
-
-        elif args.tikz:
-
-            tex = '%s/%s.tex' % (clatex_dir, name)
-
-            create_tikz_tex(fname, tex)
-
-        elif args.table:
-
-            tex = '%s/%s.tex' % (clatex_dir, name)
-
-            create_table_tex(fname, tex)
-
-        elif args.plain:
-
-            tex = '%s/%s.tex' % (clatex_dir, name)
-
-            create_plain_tex(fname, tex)
-
-        else:
-            tex = fname
+    tex_path = None
 
     if args.pdfs:
 
-        texfile = '%s/pdfs.tex' % clatex_dir if args.texfile is None else args.texfile
+        pdfs = []
 
-        tex = create_pdfs_tex(texfile, args.filter)
+        # Get pdf files from inputs. If input is None use all .pdf from current directory
+        if inputs is None:
+            pdfs = [ i for i in os.listdir('.') if i.endswith('.pdf') ]
 
-    if tex is None:
-        tex = find_tex_file()
+        elif isinstance(inputs, list):
+            for inp in inputs:
+                if os.path.isdir(inputs):
+                    pdfs.extend([ i for i in os.listdir(inputs) if i.endswith('.pdf') ])
+                else:
+                    pdfs.extend([ i for i in inputs if i.endswith('.pdf') and os.path.isfile(i) ])
+        else:
+            if os.path.isdir(inputs):
+                pdfs = [ i for i in os.listdir(inputs) if i.endswith('.pdf') ]
+            else:
+                pdfs.append(inputs)
 
-    return tex
+        # Filter pdfs
+        if args.filter is not None:
+            new_pdfs = []
+
+            filters = args.filter.split(',')
+
+            for pdf in pdfs:
+                if all([ft in i for ft in filters]):
+                    new_pdfs.append(pdf)
+
+            pdfs = new_pdfs
+
+
+        # Create tex
+        tex_path = '%s/pdfs.tex' % clatex_dir if args.output is None else args.output
+
+        create_pdfs_tex(pdfs, tex_path)
+
+    else:
+
+        if isinstance(inputs, str) and os.path.isfile(inputs):
+
+            basename = os.path.splitext(os.path.basename(inputs))[0]
+
+            # check tikz/table/plain
+            text = open(inputs).read()
+
+            is_tikz = args.tikz
+            is_table = args.table
+            is_plain = args.plain
+            if r'\documentclass' not in text:
+                if r'\begin{tikzpicture}' in text:
+                    is_tikz = True
+                elif r'\begin{tabular}' in text:
+                    is_table = True
+                else:
+                    is_plain = True
+
+            if is_tikz:
+
+                if args.tex and args.output is not None:
+                    tex_path = args.output
+                else:
+                    tex_path = '%s/%s.tex' % (clatex_dir, basename)
+
+                print_msg('Creating tex %s --> %s' % (inputs, tex_path), INFO)
+                create_tikz_tex(inputs, tex_path)
+
+            elif is_table:
+
+                if args.tex and args.output is not None:
+                    tex_path = args.output
+                else:
+                    tex_path = '%s/%s.tex' % (clatex_dir, basename)
+
+                print_msg('Creating tex %s --> %s' % (inputs, tex_path), INFO)
+                create_table_tex(inputs, tex_path)
+
+            elif is_plain:
+
+                if args.tex and args.output is not None:
+                    tex_path = args.output
+                else:
+                    tex_path = '%s/%s.tex' % (clatex_dir, basename)
+
+                print_msg('Creating tex %s --> %s' % (inputs, tex_path), INFO)
+                create_plain_tex(inputs, tex_path)
+
+            else:
+                tex_path = inputs
+
+
+    return tex_path
 
 
 def create_plain_tex(input_tex, output_tex):
@@ -499,7 +540,7 @@ def create_table_tex(input_tex, output_tex):
         of.write(tex)
 
 
-def create_pdfs_tex(output_tex, filter_):
+def create_pdfs_tex(input_pdfs, output_tex_path):
 
     header = r"""%% Created with clatex
 \documentclass[center,10pt,cm]{beamer}
@@ -522,35 +563,25 @@ def create_pdfs_tex(output_tex, filter_):
     body = ""
     counter = 0
 
-    if filter_ is not None:
-        filters = filter_.split(',')
-        images = []
-        for i in os.listdir('.'):
-            if not i.endswith('.pdf'):
-                continue
-            if all([ft in i for ft in filters]):
-                images.append(i)
-    else:
-        images = [ i for i in os.listdir('.') if i.endswith('.pdf') and not i == 'pdfs.pdf' ]
+    for pdf in sorted(input_pdfs):
 
-    for img in sorted(images):
-
-        if not img.endswith('.pdf'):
+        if not pdf.endswith('.pdf'):
             continue
 
-        title = img[:-4].replace('_', '\_')
+        title = pdf[:-4].replace('_', '\_')
 
-        if len(title) > 60:
+        if len(title) > 75:
+            title = '{\\tiny %s}' % title
+        elif len(title) > 60:
             title = '{\\scriptsize %s}' % title
         elif len(title) > 45:
             title = '{\\small %s}' % title
-
 
         body += r"""
 \begin{frame}{%s}
     \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
 \end{frame}
-""" % (title, img)
+""" % (title, pdf)
         counter += 1
 
     if not body:
@@ -558,12 +589,12 @@ def create_pdfs_tex(output_tex, filter_):
 
     text = header + body + footer
 
-    with open(output_tex, 'w+') as f:
+    with open(output_tex_path, 'w+') as f:
         f.write(text)
 
-    print_msg('Created slides "%s" with %i pdfs' % (output_tex, counter), GOOD)
+    print_msg('Created slides "%s" with %i pdfs' % (output_tex_path, counter), GOOD)
 
-    return output_tex
+    return
 
 
 def convert_image(fname):
@@ -591,12 +622,12 @@ def main():
 
     parser = argparse.ArgumentParser(description='Compile latex')
 
-    parser.add_argument('texfile', nargs='?', help='')
+    parser.add_argument('inputs', nargs='*', help='')
     parser.add_argument('-f', dest='force',   action='store_true', help='Force compilation')
     parser.add_argument('-c', dest='clean',   action='store_true', help='Clean all')
     parser.add_argument('-g', dest='debug',   action='store_true', help='Show warnings')
     parser.add_argument('-q', dest='quiet',   action='store_true', help='No prints to std out')
-    parser.add_argument('-o', dest='output',  help='Output pdf name')
+    parser.add_argument('-o', dest='output',  help='Output pdf name (or output tex name if -t option used)')
     parser.add_argument('-p', dest='open_pdf', action='store_true', help='Open final pdf')
     parser.add_argument('-v', dest='verbose', action='store_true', help='Show latex output')
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='Compile bibliography using bibtex')
@@ -619,6 +650,7 @@ def main():
 
     global args
     args = parser.parse_args()
+
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
@@ -663,21 +695,29 @@ def main():
     except OSError as exception:
         pass
 
-    # create/find tex
-    main_tex = get_tex()
+    # create/get tex
+    global inputs
+    if not args.inputs:
+        inputs = find_tex_file()
+    elif len(args.inputs) == 1:
+        inputs = args.inputs[0]
+    else:
+        inputs = args.inputs
+
+    main_tex = get_or_create_tex()
 
     if main_tex is None:
         print_msg('There is no tex to compile...', ERROR)
         return 1
 
     main_name = os.path.splitext(os.path.basename(main_tex))[0]
-    main_pdf = '%s.pdf' % main_name #if args.output is None else '%s.pdf' % args.output
+    main_pdf = '%s.pdf' % main_name if args.output is None else args.output
 
     if args.tex:
         return 0
 
     # compile
-    print_msg('Compiling %s -> %s' % (main_tex, main_pdf), INFO)
+    print_msg('Compiling tex %s --> %s' % (main_tex, main_pdf), INFO)
 
     need_compile = False
     if args.force or not os.path.isfile(main_pdf):
@@ -698,7 +738,7 @@ def main():
 
 
     if need_compile:
-        compile_ok = compile_tex(main_tex)
+        compile_ok = compile_tex(main_tex, main_pdf)
         if not compile_ok:
             return 1
 
