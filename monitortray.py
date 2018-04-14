@@ -42,10 +42,25 @@ F_POWER_NOW   = "/sys/class/power_supply/BAT0/power_now"
 F_BACKLIGHT_CURRENT = '/sys/class/backlight/intel_backlight/brightness'
 F_BACKLIGHT_MAX     = '/sys/class/backlight/intel_backlight/max_brightness'
 
+ICON_BATTERY_FULL_CHARGING    = "battery-full-charging"
+ICON_BATTERY_FULL             = "battery-full"
+ICON_BATTERY_EMPTY_CHARGING   = "battery-empty-charging"
+ICON_BATTERY_EMPTY            = "battery-empty"
+ICON_BATTERY_CAUTION_CHARGING = "battery-caution-charging"
+ICON_BATTERY_CAUTION          = "battery-caution"
+ICON_BATTERY_LOW_CHARGING     = "battery-low-charging"
+ICON_BATTERY_LOW              = "battery-low"
+ICON_BATTERY_MEDIUM_CHARGING  = "battery-medium-charging"
+ICON_BATTERY_MEDIUM           = "battery-medium"
+ICON_BATTERY_GOOD_CHARGING    = "battery-good-charging"
+ICON_BATTERY_GOOD             = "battery-good"
+ICON_BATTERY_MISSING          = "battery-missing"
+
+
 # AUDIO
 VOLUME_STEP = 2.5
 
-ICON_MUTE   = "audio-volume-muted-blocked-panel"
+ICON_MUTE   = "audio-volume-muted-blocking-panel"
 ICON_ZERO   = "audio-volume-zero-panel"
 ICON_LOW    = "audio-volume-low-panel"
 ICON_MEDIUM = "audio-volume-medium-panel"
@@ -53,7 +68,6 @@ ICON_HIGH   = "audio-volume-high-panel"
 
 # TODO:
 # Add logfile backup
-# Implement osdify
 
 def get_cmd_output(cmd):
     try:
@@ -74,9 +88,11 @@ class OSD(Gtk.Window):
 
         self.set_app_paintable(True)
         self.set_decorated(False)
-        self.set_size_request(300, 40)
+        self.set_size_request(300, 300)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_keep_above(True)
+        self.set_focus(None)
+        self.set_accept_focus(False)
 
         self.connect('draw', self.draw)
 
@@ -89,18 +105,15 @@ class OSD(Gtk.Window):
 
         self.visible = False
 
-        GLib.timeout_add_seconds(1, self.close)
-
     def close(self):
         # if not self.visible:
         #     return
-
         self.hide()
         self.visible = False
-        return True
 
-    def show(self, value, alt=False):
+    def show(self, value, icon_name='', alt=False):
         self.value = value
+        self.icon_name = icon_name
 
         if alt:
             self.color = self.alt_color
@@ -109,7 +122,28 @@ class OSD(Gtk.Window):
 
         self.queue_draw()
         self.present()
+
         self.visible = True
+
+        GLib.timeout_add_seconds(3, self.close)
+
+    def draw_icon(self, cr):
+
+        pixel_size = 150
+        x = 150-0.5*pixel_size
+        y = 130-0.5*pixel_size
+
+        cr.translate(x, y)
+        # # cr.rectangle(0, 0, pixel_size, pixel_size)
+        # cr.clip()
+
+        icon_theme = Gtk.IconTheme.get_default()
+        icon_pixbuf = icon_theme.load_icon(self.icon_name, pixel_size, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+
+        Gdk.cairo_set_source_pixbuf(cr, icon_pixbuf, 0, 0) #x, y)
+        cr.paint()
+        #    ctx.paint_with_alpha (with_alpha);
+
 
     def draw(self, widget, event):
 
@@ -121,8 +155,13 @@ class OSD(Gtk.Window):
         cr.set_operator(cairo.OPERATOR_SOURCE)
         cr.paint()
 
+        if self.icon_name:
+            cr.save()
+            self.draw_icon(cr)
+            cr.restore()
+
         cr.set_source_rgb(*self.color)
-        cr.rectangle(30, 15, self.value*240, 10)
+        cr.rectangle(30, 250, self.value*240, 10)
         cr.fill()
 
 
@@ -150,7 +189,7 @@ class TrayMonitor(dbus.service.Object):
 
         # Icon (Power)
         self.icon_power = Gtk.StatusIcon()
-        self.set_power_icon('battery_full')
+        self.set_power_icon(ICON_BATTERY_MISSING)
         self.icon_power.set_has_tooltip(True)
         self.icon_power.connect("query-tooltip", self.tooltip_power_query)
 
@@ -160,17 +199,16 @@ class TrayMonitor(dbus.service.Object):
 
         self.create_power_menu()
 
-        # Icon (Volume)
-        self.icon_volume = Gtk.StatusIcon()
-        self.set_volume_icon(ICON_MUTE)
-        self.icon_volume.set_has_tooltip(True)
-        self.icon_volume.connect("query-tooltip", self.tooltip_volume_query)
+        # Icon (Audio)
+        self.icon_audio = Gtk.StatusIcon()
+        self.set_audio_icon()
+        self.icon_audio.set_has_tooltip(True)
+        self.icon_audio.connect("query-tooltip", self.tooltip_audio_query)
 
         #self.icon_volume.connect('activate',   self.on_volume_right_click_event, 3, Gtk.get_current_event_time())
         #self.icon_volume.connect('popup-menu', self.on_volume_right_click_event)
-        self.icon_volume.connect('scroll-event', self.on_volume_scroll_event)
-        self.icon_volume.connect('button-release-event', self.on_volume_button_release_event)
-
+        self.icon_audio.connect('scroll-event', self.on_audio_scroll_event)
+        self.icon_audio.connect('button-release-event', self.on_audio_button_release_event)
 
         # Notifications and OSD
         Notify.init("monitor")
@@ -179,10 +217,10 @@ class TrayMonitor(dbus.service.Object):
 
         # Update power and audio
         self.update_power()
-        self.update_volume()
+        self.update_audio()
 
         GLib.timeout_add_seconds(UPDATE_POWER_INTERVAL, self.update_power)
-        GLib.timeout_add_seconds(UPDATE_AUDIO_INTERVAL, self.update_volume)
+        GLib.timeout_add_seconds(UPDATE_AUDIO_INTERVAL, self.update_audio)
 
 
     @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
@@ -197,8 +235,8 @@ class TrayMonitor(dbus.service.Object):
     def set_power_icon(self, name):
         self.icon_power.set_from_icon_name(name)
 
-    def set_volume_icon(self, name):
-        self.icon_volume.set_from_icon_name(name)
+    def set_audio_icon(self):
+        self.icon_audio.set_from_icon_name(self.get_audio_icon())
 
     def create_power_menu(self):
 
@@ -266,10 +304,10 @@ class TrayMonitor(dbus.service.Object):
         elif direction == Gdk.ScrollDirection.DOWN:
             self.change_brightness(-1)
 
-    def on_volume_left_click_event(self, icon, button):
+    def on_audio_left_click_event(self, icon, button):
         pass
 
-    def on_volume_right_click_event(self, icon, button, time):
+    def on_audio_right_click_event(self, icon, button, time):
         pass
         # self.info_battery.set_label('%s, %i%%, %.2fmW' % (self.battery['status'], self.battery['percentage'], self.battery['volume']))
 
@@ -281,21 +319,19 @@ class TrayMonitor(dbus.service.Object):
 
         # self.menu_volume.popup(None, None, None, self.icon_volume, button, time)
 
-    def on_volume_scroll_event(self, icon, event):
+    def on_audio_scroll_event(self, icon, event):
         direction = event.direction
         if direction == Gdk.ScrollDirection.UP:
             self.change_volume(+VOLUME_STEP)
         elif direction == Gdk.ScrollDirection.DOWN:
             self.change_volume(-VOLUME_STEP)
 
-    def on_volume_button_release_event(self, icon, event):
+    def on_audio_button_release_event(self, icon, event):
         if event.button != 2:
             return False
 
         self.toggle_muted()
-        self.update_volume()
-
-        self.osd.show(self.audio_volume/100., self.audio_muted)
+        self.update_audio()
 
         return True
 
@@ -353,6 +389,8 @@ class TrayMonitor(dbus.service.Object):
         if new_value != current_value:
             with open(F_BACKLIGHT_CURRENT, 'w') as f:
                 f.write(str(new_value))
+
+        #self.osd.show(self.audio_volume/100., self.audio_muted)
 
 
     ## RAM
@@ -521,37 +559,51 @@ class TrayMonitor(dbus.service.Object):
         tmp = ''
         if status == 'Discharging':
             if percentage < BATTERY_LEVEL_CRITICAL:
-                tmp = "battery_empty";
+                tmp = ICON_BATTERY_EMPTY
             elif percentage < BATTERY_LEVEL_LOW:
-                tmp = "battery_caution"
+                tmp = ICON_BATTERY_CAUTION
             elif percentage < 45:
-                tmp = "battery_low"
+                tmp = ICON_BATTERY_LOW
             elif percentage < 65:
-                tmp = "battery_two_thirds"
+                tmp = ICON_BATTERY_MEDIUM
             elif percentage < 75:
-                tmp = "battery_third_fouth"
+                tmp = ICON_BATTERY_GOOD
             else:
-                tmp = "battery_full"
+                tmp = ICON_BATTERY_FULL
 
         elif status == 'Charging':
-            tmp = "battery_plugged"
+            if percentage < BATTERY_LEVEL_CRITICAL:
+                tmp = ICON_BATTERY_EMPTY_CHARGING
+            elif percentage < BATTERY_LEVEL_LOW:
+                tmp = ICON_BATTERY_CAUTION_CHARGING
+            elif percentage < 45:
+                tmp = ICON_BATTERY_LOW_CHARGING
+            elif percentage < 65:
+                tmp = ICON_BATTERY_MEDIUM_CHARGING
+            elif percentage < 75:
+                tmp = ICON_BATTERY_GOOD_CHARGING
+            else:
+                tmp = ICON_BATTERY_FULL_CHARGING
 
         elif status == 'Full':
-            tmp = "battery_charged"
+            tmp = ICON_BATTERY_FULL
+
         elif status == 'Unknown':
             if percentage > 95:
-                tmp = "battery_plugged"
+                tmp = ICON_BATTERY_FULL_CHARGING
             else:
-                tmp = "dialog-question"
+                tmp = ICON_BATTERY_MISSING
         else:
-            tmp = "dialog-question"
+            tmp = ICON_BATTERY_MISSING
 
         return tmp
 
     @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
     def toggle_muted(self):
         os.system('pactl set-sink-mute "%s" toggle' % self.audio_sink)
-        self.update_volume()
+        self.update_audio()
+
+        self.osd.show(self.audio_volume/100., self.get_audio_icon(), self.audio_muted)
 
     @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
     def change_volume(self, arg):
@@ -570,9 +622,25 @@ class TrayMonitor(dbus.service.Object):
         if self.audio_muted:
             self.toggle_muted()
 
-        self.update_volume()
+        self.update_audio()
+        self.osd.show(self.audio_volume/100., self.get_audio_icon(), self.audio_muted)
 
-    def update_volume(self):
+    def get_audio_icon(self):
+        if self.audio_muted:
+            icon_name = ICON_MUTE
+        else:
+            if self.audio_volume < 5:
+                icon_name = ICON_ZERO
+            elif self.audio_volume < 33:
+                icon_name = ICON_LOW
+            elif self.audio_volume < 66:
+                icon_name = ICON_MEDIUM
+            else:
+                icon_name = ICON_HIGH
+
+        return icon_name
+
+    def update_audio(self):
 
         try:
             self.audio_sink = get_cmd_output("pacmd list-sinks | awk '/* index:/{ print $3 }'")
@@ -587,23 +655,12 @@ class TrayMonitor(dbus.service.Object):
             self.audio_muted = False
             self.audio_volume = 0.
 
-        if self.audio_muted:
-            icon_name = ICON_MUTE
-        else:
-            if self.audio_volume < 5:
-                icon_name = ICON_ZERO
-            elif self.audio_volume < 33:
-                icon_name = ICON_LOW
-            elif self.audio_volume < 66:
-                icon_name = ICON_MEDIUM
-            else:
-                icon_name = ICON_HIGH
 
-        self.set_volume_icon(icon_name)
+        self.set_audio_icon()
 
         return True
 
-    def tooltip_volume_query(self, widget, x, y, keyboard_mode, tooltip):
+    def tooltip_audio_query(self, widget, x, y, keyboard_mode, tooltip):
 
         #  update tooltip
         volume = self.audio_volume
