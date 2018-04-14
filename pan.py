@@ -78,11 +78,10 @@ if args.sourdough:
     output = """
 Bread
 =====
-
-* Flour    : %7.2fg
-* Water    : %7.2fg (%5.2f%%)
-* Salt     : %7.2fg (%5.2f%%)
-* Sourdough: %7.2fg (%5.2f%%)
+* Flour      = %7.2fg
+* Water      = %7.2fg (%5.2f%%)
+* Salt       = %7.2fg (%5.2f%%)
+* Sourdough  = %7.2fg (%5.2f%%)
 
 Total weight = %7.2fg
 """ % (w_f, w_w, f_w*100, w_s, f_s*100, w_x, f_x*100, w_t)
@@ -91,11 +90,10 @@ else:
     output = """
 Bread
 =====
-
-* Flour: %7.2fg
-* Water: %7.2fg (%5.2f%%)
-* Salt : %7.2fg (%5.2f%%)
-* Yeast: %7.2fg (%5.2f%%)
+* Flour      = %7.2fg
+* Water      = %7.2fg (%5.2f%%)
+* Salt       = %7.2fg (%5.2f%%)
+* Yeast      = %7.2fg (%5.2f%%)
 
 Total weight = %7.2fg
 """ % (w_f, w_w, f_w*100, w_s, f_s*100, w_y, f_y*100, w_t)
