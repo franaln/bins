@@ -15,7 +15,6 @@ C_ERROR   = '\033[0;31m'
 C_INFO    = '\033[0;32m'
 C_RESET   = '\033[0m'
 
-
 INFO = 0
 GOOD = 1
 WARNING = 2
@@ -102,8 +101,8 @@ template_slides = r"""
 \title{}
 \author{Francisco Alonso}
 \institute{UNLP/IFLP}
-\date[meeting]{\today}
-\titlegraphic{\img{0.13}{iflp_logo.pdf}\hspace{0.8cm}\img{0.12}{atlas_logo.pdf}}
+\date[]{\today}
+%%\titlegraphic{\img{0.13}{iflp_logo.pdf}\hspace{0.8cm}\img{0.12}{atlas_logo.pdf}}
 
 \begin{document}
 \centering
@@ -197,7 +196,9 @@ def get_bibtex_style(main_tex):
     return None
 
 
+#
 # Colorize LaTeX output.
+#
 def bytes_to_human(num):
     num = int(num)
     for unit in ['','K','M','G','T','P','E','Z']:
@@ -297,6 +298,9 @@ def colorize_bibtex_output(logfile):
                 print_msg('%s %s %s' (m.group("kind"), int(m.group("line")),  m.group("text")), INFO)
 
 
+#
+# Compile tex
+#
 def compile_tex(input_path, output_path):
 
     name = os.path.basename(input_path)[:-4]
@@ -371,8 +375,10 @@ def compile_tex(input_path, output_path):
 
     return compile_ok
 
-
-def get_or_create_tex():
+#
+# Create tex
+#
+def create_or_get_tex():
 
     """
     Find or create tex file
@@ -704,7 +710,7 @@ def main():
     else:
         inputs = args.inputs
 
-    main_tex = get_or_create_tex()
+    main_tex = create_or_get_tex()
 
     if main_tex is None:
         print_msg('There is no tex to compile...', ERROR)
@@ -713,6 +719,7 @@ def main():
     main_name = os.path.splitext(os.path.basename(main_tex))[0]
     main_pdf = '%s.pdf' % main_name if args.output is None else args.output
 
+    # exit now if only create tex option is used
     if args.tex:
         return 0
 
@@ -752,8 +759,8 @@ def main():
         while True:
             try:
                 time.sleep(sleep_interval)
-                get_tex()
-                compile_tex(main_tex)
+                create_or_get_tex()
+                compile_tex(main_tex, main_pdf)
             except KeyboardInterrupt:
                 print('Stopped')
                 return 0
