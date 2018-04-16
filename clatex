@@ -400,12 +400,12 @@ def create_or_get_tex():
         elif isinstance(inputs, list):
             for inp in inputs:
                 if os.path.isdir(inputs):
-                    pdfs.extend([ i for i in os.listdir(inputs) if i.endswith('.pdf') ])
+                    pdfs.extend([ os.path.join(inputs, i) for i in os.listdir(inputs) if i.endswith('.pdf') ])
                 else:
                     pdfs.extend([ i for i in inputs if i.endswith('.pdf') and os.path.isfile(i) ])
         else:
             if os.path.isdir(inputs):
-                pdfs = [ i for i in os.listdir(inputs) if i.endswith('.pdf') ]
+                pdfs = [ os.path.join(inputs, i) for i in os.listdir(inputs) if i.endswith('.pdf') ]
             else:
                 pdfs.append(inputs)
 
