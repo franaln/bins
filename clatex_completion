@@ -1,5 +1,6 @@
 # bash completion for clatex
-# copy this file to /usr/share/bash-completions/completions/clatex
+# copy this file to /usr/share/bash-completions/completions/clatex:
+# $ cp clatex_completion /usr/share/bash-completions/completions/clatex
 
 _clatex()
 {
@@ -7,7 +8,7 @@ _clatex()
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  opts="-h --help -f -c -g -o -v -b -a -j -t -z --tikz --plots --filter --table --template --loop --sleep -e --slides"
+  opts="-h --help -f -c -g -q -o -p -v -b -a -j -t --tex -z --tmp --tikz --table --plain --pdfs --filter --loop --sleep -e --engine --slides --slidesdir"
 
   if [[ "$cur" != -* ]]; then
         _filedir '@(tex)'
