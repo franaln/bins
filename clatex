@@ -364,7 +364,7 @@ def compile_tex(input_path, output_path):
 
     if compile_ok and os.path.isfile(tmp_pdf_file) and not args.tmp:
 
-        if args.table:
+        if is_table:
             crop_pdf(tmp_pdf_file, output_path)
         else:
             subprocess.call(['mv', tmp_pdf_file, output_path])
@@ -435,6 +435,8 @@ def create_or_get_tex():
 
             # check tikz/table/plain
             text = open(inputs).read()
+
+            global is_table ## UHM: FIX!
 
             is_tikz = args.tikz
             is_table = args.table
