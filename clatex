@@ -223,7 +223,7 @@ def colorize_latex_output(logfile, show=True):
 
     show_warnings = args.debug
     compile_ok = True
-
+    compile_info = (0, 0, 0, 0)
     for i, line in enumerate(log):
 
         if 'Output written on' in line:
@@ -362,11 +362,12 @@ def compile_tex(input_path, output_path):
     if os.path.isfile(logfile):
         compile_ok, compile_info = colorize_latex_output(logfile)
 
-    if compile_ok and os.path.isfile(tmp_pdf_file) and not args.tmp:
+    if compile_ok and os.path.isfile(tmp_pdf_file):
 
         if args.table:
             crop_pdf(tmp_pdf_file, output_path)
-        else:
+
+        elif not args.tmp:
             subprocess.call(['mv', tmp_pdf_file, output_path])
 
         pages, size, n_warning, n_error = compile_info
@@ -719,6 +720,9 @@ def main():
     main_name = os.path.splitext(os.path.basename(main_tex))[0]
     main_pdf = '%s.pdf' % main_name if args.output is None else args.output
 
+    if args.tmp:
+        main_pdf = '%s/%s' % (clatex_dir, main_pdf)
+
     # exit now if only create tex option is used
     if args.tex:
         return 0
@@ -767,10 +771,7 @@ def main():
 
 
     if args.open_pdf:
-        if args.tmp:
-            subprocess.call(['open', clatex_dir+'/'+main_pdf])
-        else:
-            subprocess.call(['open', main_pdf])
+        subprocess.call(['open', main_pdf])
 
 
 if __name__ == '__main__':
