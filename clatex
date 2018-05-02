@@ -224,6 +224,7 @@ def colorize_latex_output(logfile, show=True):
     show_warnings = args.debug
     compile_ok = True
     compile_info = (0, 0, 0, 0)
+
     for i, line in enumerate(log):
 
         if 'Output written on' in line:
@@ -234,16 +235,21 @@ def colorize_latex_output(logfile, show=True):
                 name = os.path.basename(sline[3])
                 pages = sline[4][1:]
                 size = bytes_to_human(sline[6])
-
                 compile_info = (pages, size, n_warning, n_error)
-
-                #msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (name, pages, size, n_warning, n_error)
-
             except:
-                pass #msg = line
+                pass
 
-            # if show:
-            #     print_msg(msg, GOOD)
+            # for xelatex
+            try:
+                sline = line.split()
+
+                name = sline[3]
+                pages = sline[4][1:].replace(' pages', '')
+                size = 0
+                compile_info = (pages, size, n_warning, n_error)
+            except:
+                pass
+
 
         elif 'No pages of output' in line:
             compile_ok = False
@@ -364,7 +370,7 @@ def compile_tex(input_path, output_path):
 
     if compile_ok and os.path.isfile(tmp_pdf_file):
 
-        if args.table:
+        if is_table:
             crop_pdf(tmp_pdf_file, output_path)
 
         elif not args.tmp:
@@ -379,7 +385,7 @@ def compile_tex(input_path, output_path):
 #
 # Create tex
 #
-def create_or_get_tex():
+def create_or_get_tex(inputs):
 
     """
     Find or create tex file
@@ -436,6 +442,8 @@ def create_or_get_tex():
 
             # check tikz/table/plain
             text = open(inputs).read()
+
+            global is_table ## UHM: FIX!
 
             is_tikz = args.tikz
             is_table = args.table
@@ -642,6 +650,8 @@ def main():
     parser.add_argument('-j', dest='only',    default='', help='Include only')
     parser.add_argument('-t', '--tex', action='store_true', help='Only create tex, don\'t compile')
     parser.add_argument('-z', '--tmp', action='store_true', help='Compile in /tmp.')
+    parser.add_argument('-k', '--keep-tmp-files', dest='keep_tmp_files', action='store_true', help='Keep tmp files')
+    parser.add_argument('-e', '--engine',  default='pdflatex', help='Latex engine: pdflatex (default), xelatex, lualatex, ...')
     parser.add_argument('--tikz',  action='store_true', help='Compile tikz picture')
     parser.add_argument('--table', action='store_true', help='Compile table')
     parser.add_argument('--plain', action='store_true', help='Compile plain text')
@@ -649,7 +659,6 @@ def main():
     parser.add_argument('--filter', help='Filter files (to use with --pdfs)')
     parser.add_argument('--loop', action='store_true', help='Create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
-    parser.add_argument('-e', '--engine',  default='pdflatex', help='Latex engine: pdflatex (default), xelatex, lualatex, ...')
 
     parser.add_argument('--slides', help='Create slides template')
     parser.add_argument('--slidesdir', help='Create slides directory with template')
@@ -662,7 +671,9 @@ def main():
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
 
-    # templates (create and exit!)
+    #
+    # Templates (create and exit!)
+    #
     if args.slidesdir is not None:
         name = args.slidesdir
 
@@ -702,8 +713,9 @@ def main():
     except OSError as exception:
         pass
 
+    #
     # create/get tex
-    global inputs
+    #
     if not args.inputs:
         inputs = find_tex_file()
     elif len(args.inputs) == 1:
@@ -711,7 +723,7 @@ def main():
     else:
         inputs = args.inputs
 
-    main_tex = create_or_get_tex()
+    main_tex = create_or_get_tex(inputs)
 
     if main_tex is None:
         print_msg('There is no tex to compile...', ERROR)
@@ -727,7 +739,9 @@ def main():
     if args.tex:
         return 0
 
-    # compile
+    #
+    # Compilation
+    #
     print_msg('Compiling tex %s --> %s' % (main_tex, main_pdf), INFO)
 
     need_compile = False
@@ -747,7 +761,6 @@ def main():
                     need_compile = True
                     break
 
-
     if need_compile:
         compile_ok = compile_tex(main_tex, main_pdf)
         if not compile_ok:
@@ -757,21 +770,28 @@ def main():
         print_msg('Nothing to be done', INFO)
 
 
+    # Loop compile
     if args.loop:
         sleep_interval = args.sleep if args.sleep is not None else 5
 
         while True:
             try:
                 time.sleep(sleep_interval)
-                create_or_get_tex()
+                create_or_get_tex(inputs)
                 compile_tex(main_tex, main_pdf)
             except KeyboardInterrupt:
                 print('Stopped')
                 return 0
 
 
+    # Open output pdf
     if args.open_pdf:
         subprocess.call(['open', main_pdf])
+
+
+    # Clean temporary files
+    if not args.keep_tmp_files and not args.tmp:
+        clean(clatex_dir)
 
 
 if __name__ == '__main__':
