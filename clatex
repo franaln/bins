@@ -377,7 +377,10 @@ def compile_tex(input_path, output_path):
             subprocess.call(['mv', tmp_pdf_file, output_path])
 
         pages, size, n_warning, n_error = compile_info
-        msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (output_path, pages, size, n_warning, n_error)
+
+        file_size = bytes_to_human(os.path.getsize(output_path))
+
+        msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (output_path, pages, file_size, n_warning, n_error)
         print_msg(msg, GOOD)
 
     return compile_ok
