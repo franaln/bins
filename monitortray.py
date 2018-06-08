@@ -358,13 +358,21 @@ class TrayMonitor(dbus.service.Object):
 
 
     ## Brightness
+    def set_brightness(self, value):
+        # with open(F_BACKLIGHT_CURRENT) as curr_file:
+        #     return int(curr_file.read().split('\n')[0])
+        subprocess.call(['xbacklight', '-set', str(value)])
+
     def get_current_brightness(self):
-        with open(F_BACKLIGHT_CURRENT) as curr_file:
-            return int(curr_file.read().split('\n')[0])
+        # with open(F_BACKLIGHT_CURRENT) as curr_file:
+        #     return int(curr_file.read().split('\n')[0])
+        return float(subprocess.check_output(['xbacklight', '-get']).decode('utf-8'))
+
 
     def get_max_brightness(self):
-        with open(F_BACKLIGHT_MAX) as max_file:
-            return int(max_file.read().split('\n')[0])
+        # with open(F_BACKLIGHT_MAX) as max_file:
+        #     return int(max_file.read().split('\n')[0])
+        return 100.
 
     @dbus.service.method("org.traymon.Daemon", in_signature='', out_signature='')
     def change_brightness(self, arg):
@@ -387,10 +395,15 @@ class TrayMonitor(dbus.service.Object):
             new_value = step
 
         if new_value != current_value:
-            with open(F_BACKLIGHT_CURRENT, 'w') as f:
-                f.write(str(new_value))
+            self.set_brightness(new_value)
+
+            # with open(F_BACKLIGHT_CURRENT, 'w') as f:
+            #     f.write(str(new_value))
 
         #self.osd.show(self.audio_volume/100., self.audio_muted)
+
+
+
 
 
     ## RAM

@@ -43,7 +43,8 @@ parser.add_argument('--all',   dest='show_all', action='store_true', help='Show 
 parser.add_argument('--quiet', dest='show_taskname_only', action='store_true', help='Show taskname only')
 parser.add_argument('--stat',  dest='show_full_stats', action='store_true', help='Show full stats for matching jobs')
 
-parser.add_argument('--retry',  dest='retry', action='store_true', help='')
+parser.add_argument('-r', '--retry',  dest='retry', action='store_true', help='')
+parser.add_argument('-z', '--download-output',  dest='download_output', action='store_true', help='')
 
 
 args = parser.parse_args()
