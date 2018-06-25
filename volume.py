@@ -46,15 +46,17 @@ if len(sys.argv) > 1:
 
 
 # Print audio info
-if audio_muted:
-    print('<span color=\'#ff4d4d\'>🔇  %i%%</span>' % audio_volume)
 else:
-    if audio_volume < 5:
-        icon = '🔈'
-    elif audio_volume < 50:
-        icon = '🔉'
+
+    if audio_muted:
+        print('<span color=\'#ff4d4d\'>🔇  %i%%</span>' % audio_volume)
     else:
-        icon = '🔊'
+        if audio_volume < 5:
+            icon = '🔈'
+        elif audio_volume < 50:
+            icon = '🔉'
+        else:
+            icon = '🔊'
 
     text = '%s  %i%%' % (icon, audio_volume)
 
