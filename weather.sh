@@ -28,7 +28,9 @@ WEATHER_INFO=$(wget -qO- "${WEATHER_URL}")
 WEATHER_MAIN=$(echo "${WEATHER_INFO}" | grep -o -e '\"main\":\"[a-Z]*\"' | awk -F ':' '{print $2}' | tr -d '"')
 WEATHER_TEMP=$(echo "${WEATHER_INFO}" | grep -o -e '\"temp\":\-\?[0-9]*' | awk -F ':' '{print $2}' | tr -d '"')
 
-if [[ "${WEATHER_MAIN}" = *Snow* ]]; then
+if [ -z "${WEATHER_MAIN}" ] ; then
+    echo ""
+elif [[ "${WEATHER_MAIN}" = *Snow* ]]; then
     echo "${ICON_SNOW} ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
 elif [[ "${WEATHER_MAIN}" = *Rain* ]] || [[ "${WEATHER_MAIN}" = *Drizzle* ]]; then
     echo "${ICON_RAINY} ${WEATHER_TEMP}${SYMBOL_CELSIUS}"
