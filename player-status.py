@@ -10,7 +10,7 @@ player = Playerctl.Player()
 status = player.get_property('status')
 
 if not status:
-    text = '\uf04d'
+    text = '' #'\uf04d'
 
 else:
 
