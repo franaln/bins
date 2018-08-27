@@ -250,7 +250,6 @@ def colorize_latex_output(logfile, show=True):
             except:
                 pass
 
-
         elif 'No pages of output' in line:
             compile_ok = False
             if show:
@@ -446,8 +445,6 @@ def create_or_get_tex(inputs):
             # check tikz/table/plain
             text = open(inputs).read()
 
-            global is_table ## UHM: FIX!
-
             is_tikz = args.tikz
             is_table = args.table
             is_plain = args.plain
@@ -626,6 +623,9 @@ def crop_pdf(input_pdf, output_pdf):
     os.system('pdfcrop {0} {1} > /dev/null'.format(input_pdf, output_pdf))
 
 
+def move_file(old_path, new_path):
+    shutil.move(old_path, new_path)
+
 def clean(fname):
     try:
         os.unlink(fname)
@@ -651,7 +651,8 @@ def main():
     parser.add_argument('-b', dest='bibtex',  action='store_true', help='Compile bibliography using bibtex')
     parser.add_argument('-a', dest='fast',    action='store_true', help='Compile only once')
     parser.add_argument('-j', dest='only',    default='', help='Include only')
-    parser.add_argument('-t', '--tex', action='store_true', help='Only create tex, don\'t compile')
+    parser.add_argument('-t', '--tex', help='Intermediary tex output name')
+    parser.add_argument('--onlytex', action='store_true', help='Only create tex, don\'t compile')
     parser.add_argument('-z', '--tmp', action='store_true', help='Compile in /tmp.')
     parser.add_argument('-k', '--keep-tmp-files', dest='keep_tmp_files', action='store_true', help='Keep tmp files')
     parser.add_argument('-e', '--engine',  default='pdflatex', help='Latex engine: pdflatex (default), xelatex, lualatex, ...')
@@ -663,6 +664,7 @@ def main():
     parser.add_argument('--loop', action='store_true', help='Create and compile every 5 seconds.')
     parser.add_argument('--sleep', type=int)
 
+    # Templates
     parser.add_argument('--slides', help='Create slides template')
     parser.add_argument('--slidesdir', help='Create slides directory with template')
 
@@ -673,6 +675,9 @@ def main():
 
     global clatex_dir
     clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
+
+    global is_table ## UHM: FIX!
+    is_table = args.table
 
     #
     # Templates (create and exit!)
@@ -701,7 +706,7 @@ def main():
         return 0
 
 
-    # clean
+    # clean clatex dir
     if args.clean:
         clean(clatex_dir)
         return 0
@@ -716,8 +721,10 @@ def main():
     except OSError as exception:
         pass
 
+
+
     #
-    # create/get tex
+    # Find tex or create tmp tex if necessary
     #
     if not args.inputs:
         inputs = find_tex_file()
@@ -732,7 +739,9 @@ def main():
         print_msg('There is no tex to compile...', ERROR)
         return 1
 
+
     main_name = os.path.splitext(os.path.basename(main_tex))[0]
+
     main_pdf = '%s.pdf' % main_name if args.output is None else args.output
 
     if args.tmp:
