@@ -10,8 +10,8 @@ synclient ClickFinger3=0
 synclient HorizTwoFingerScroll=1
 synclient VertTwoFingerScroll=1
 
-synclient FingerLow=40
-synclient FingerHigh=45
+synclient FingerLow=45
+synclient FingerHigh=50
 
 synclient MinSpeed=1
 synclient MaxSpeed=4

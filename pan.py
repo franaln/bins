@@ -166,13 +166,11 @@ if args.config_file is not None:
         final_recipe[ing] = w
 
 
-
     # Print recipe
     print('Using configfile {0} for total weight = {1}\n'.format(args.config_file, args.total))
 
 
     # Fix
-
     print('+---------------------------------+')
     for ing, w in final_recipe.items():
 

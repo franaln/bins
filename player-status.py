@@ -18,8 +18,11 @@ else:
     artist = player.get_artist()
     album  = player.get_album()
 
-    if len(title) > 25:
-        title = ''.join(title[:23])+'...'
+    if len(title) > 30:
+        title = '%s...' % title[:27]
+
+    if len(artist) > 30:
+        artist = '%s...' % artist[:23]
 
     if status == 'Playing':
         text = '\uf04b  '
