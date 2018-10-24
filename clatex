@@ -17,6 +17,9 @@ try:
 except:
     pass
 
+
+PDF_VIEWER = 'open'
+
 C_WARNING = '\033[93m'
 C_ERROR   = '\033[0;31m'
 C_INFO    = '\033[0;32m'
@@ -875,7 +878,7 @@ def main():
 
     # Open output pdf
     if args.open_pdf:
-        subprocess.call(['open', main_pdf])
+        subprocess.call([PDF_VIEWER, main_pdf])
 
 
 
