@@ -102,9 +102,9 @@ $body$
 """
 
 template_slides = r"""
-\documentclass[center,10pt,cm]{beamer}
+\documentclass[center,10pt,cm,aspectratio=169]{beamer}
 
-\usetheme{mini}
+\usetheme{minicasual}
 \input{physics.tex}
 \input{susy.tex}
 
@@ -112,7 +112,7 @@ template_slides = r"""
 \author{Francisco Alonso}
 \institute{UNLP/IFLP}
 \date[]{\today}
-%%\titlegraphic{\img{0.13}{iflp_logo.pdf}\hspace{0.8cm}\img{0.12}{atlas_logo.pdf}}
+%%\titlegraphic{\img{0.12}{iflp_logo.pdf}\hspace{0.8cm}\img{0.12}{atlas_logo.pdf}}
 
 \begin{document}
 \centering
@@ -450,7 +450,7 @@ def create_table_tex(input_tex, output_tex):
 def create_pdfs_tex(input_pdfs, output_tex, matrix):
 
     header = r"""%% Created with clatex
-\documentclass[center,10pt,cm]{beamer}
+\documentclass[center,10pt,cm,aspectratio=169]{beamer}
 
 % basic style
 \renewcommand\familydefault{\rmdefault}
