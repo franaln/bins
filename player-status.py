@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import gi
-gi.require_version('Playerctl', '1.0')
+gi.require_version('Playerctl', '2.0')
 
 from gi.repository import Playerctl
 
@@ -19,7 +19,10 @@ else:
     album  = player.get_album()
 
     if len(title) > 30:
-        title = '%s...' % title[:27]
+        if ' - ' in title:
+            title, _ = title.split(' - ')
+        else:
+            title = '%s...' % title[:27]
 
     if len(artist) > 30:
         artist = '%s...' % artist[:23]
@@ -36,7 +39,6 @@ else:
 
     elif status == 'Paused':
         text = '\uf04c  '
-
 
 
 print(text)

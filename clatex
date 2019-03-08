@@ -357,7 +357,7 @@ def compile_tex(input_path, output_path):
         os.environ['BIBINPUTS'] = pwd + ':'
         os.environ['BSTINPUT'] = clatex_dir + ':' + pwd + ':'
 
-        style = get_bibtex_style(texfile)
+        style = get_bibtex_style(input_path)
 
         if style is not None:
             os.system('cp %s.bst %s/%s' % (style, clatex_dir, style))
