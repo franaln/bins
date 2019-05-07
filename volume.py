@@ -4,6 +4,12 @@ import os
 import sys
 import subprocess
 
+ICON_MUTE   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-muted-blocking-panel.png"
+ICON_ZERO   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-zero-panel.png"
+ICON_LOW    = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-low-panel.png"
+ICON_MEDIUM = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-medium-panel.png"
+ICON_HIGH   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-high-panel.png"
+
 
 def get_cmd_output(cmd):
     try:
@@ -44,20 +50,25 @@ if len(sys.argv) > 1:
         if audio_volume < 100:
             os.system('pactl set-sink-volume %s +%i%%' % (audio_sink, sarg))
 
+    os.system('canberra-gtk-play -i audio-volume-change -d "changeVolume"')
 
 # Print audio info
 else:
 
     if audio_muted:
-        print('<span color=\'#ff4d4d\'>🔇  %i%%</span>' % audio_volume)
+        icon = ICON_MUTE
+        text = '<span color=\'#ff4d4d\'>%i%%</span>' % audio_volume
     else:
         if audio_volume < 5:
-            icon = '🔈'
-        elif audio_volume < 50:
-            icon = '🔉'
+            icon = ICON_ZERO
+        elif audio_volume < 33:
+            icon = ICON_LOW
+        elif audio_volume < 66:
+            icon = ICON_MEDIUM
         else:
-            icon = '🔊'
+            icon = ICON_HIGH
 
-    text = '%s  %i%%' % (icon, audio_volume)
+        text = '%i%%' % (audio_volume)
 
+    print(icon)
     print(text)

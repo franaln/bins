@@ -10,15 +10,15 @@ synclient ClickFinger3=0
 synclient HorizTwoFingerScroll=1
 synclient VertTwoFingerScroll=1
 
-synclient FingerLow=45
-synclient FingerHigh=50
+synclient FingerLow=50
+synclient FingerHigh=55
 
 synclient MinSpeed=1
 synclient MaxSpeed=4
 synclient AccelFactor=0.06
 
-synclient VertScrollDelta=60
-synclient HorizScrollDelta=60
+synclient VertScrollDelta=50
+synclient HorizScrollDelta=50
 
 # synclient MaxTapTime=180
 # synclient MaxTapMove=170
