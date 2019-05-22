@@ -27,12 +27,12 @@ else:
     if status == 'Playing':
         text = '\uf04b  '
 
-        text += title
+        # text += title
 
-        if artist.strip():
-            text += ' | <b>%s</b>' % artist
-        elif album.strip():
-            text += ' | <b>%s</b>' % album
+        # if artist.strip():
+        #     text += ' | <b>%s</b>' % artist
+        # elif album.strip():
+        #     text += ' | <b>%s</b>' % album
 
     elif status == 'Paused':
         text = '\uf04c  '
