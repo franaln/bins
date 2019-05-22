@@ -128,6 +128,48 @@ template_slides = r"""
 \end{document}
 """
 
+template_python_fns = r"""
+# functions
+def bdoc():
+    print(r'\documentclass[center,10pt,cm,aspectratio=169]{beamer}')
+    print(r'\usetheme{mini}')
+    print(r'\begin{document}')
+    print(r'\centering')
+
+def edoc():
+    print(r"\end{document}")
+
+def bframe(title=''):
+    print()
+    print(r'\begin{frame}{%s}' % title)
+    print()
+
+def eframe():
+    print()
+    print(r'\end{frame}')
+    print()
+
+def spc():
+    print()
+
+def vspace(arg):
+    print(r'\vspace{%s}' % arg)
+
+def text(_text):
+    print(_text)
+
+def img(width, path):
+    print(r'\includegraphics[width=%s\textwidth]{%s}' % (width, path))
+# ------
+"""
+
+template_python_before = r"""
+bdoc()
+"""
+
+template_python_after = r"""
+edoc()
+"""
 
 def find_tex_file():
     tex_files = []
@@ -237,7 +279,7 @@ def colorize_latex_output(logfile, show=True):
 
     for i, line in enumerate(log):
 
-        if 'Output written on' in line:
+        if 'Output written' in line:
 
             try:
                 sline = line.split()
@@ -250,6 +292,7 @@ def colorize_latex_output(logfile, show=True):
                 pass
 
             # for xelatex
+            # Output written on XXXX (XX pages)
             try:
                 sline = line.split()
 
@@ -357,7 +400,7 @@ def compile_tex(input_path, output_path):
         os.environ['BIBINPUTS'] = pwd + ':'
         os.environ['BSTINPUT'] = clatex_dir + ':' + pwd + ':'
 
-        style = get_bibtex_style(texfile)
+        style = get_bibtex_style(input_path)
 
         if style is not None:
             os.system('cp %s.bst %s/%s' % (style, clatex_dir, style))
@@ -508,7 +551,16 @@ def create_pdfs_tex(input_pdfs, output_tex, matrix):
 
 def create_python_text(input_py, output_tex):
 
-    out = subprocess.check_output(['python', input_py])
+    python_code = template_python_fns + \
+        template_python_before + \
+        open(input_py).read() +\
+        template_python_after
+
+    tmp_py = input_py+'.tmp.py'
+    with open(tmp_py, 'w+') as f:
+        f.write(python_code)
+
+    out = subprocess.check_output(['python', tmp_py])
 
     with open(output_tex, 'w+') as f:
         f.write(out.decode('utf-8'))
@@ -635,7 +687,7 @@ def main():
     parser.add_argument('--onlytex', action='store_true', help='Only create tex, don\'t compile')
     parser.add_argument('-z', '--tmp', action='store_true', help='Compile in /tmp.')
     parser.add_argument('-k', '--keep-tmp-files', dest='keep_tmp_files', action='store_true', help='Keep tmp files')
-    parser.add_argument('-e', '--engine',  default='pdflatex', help='Latex engine: pdflatex (default), xelatex, lualatex, ...')
+    parser.add_argument('-e', '--engine',  default='xelatex', help='Latex engine: pdflatex, xelatex (default), lualatex')
     parser.add_argument('--tikz',  action='store_true', help='Compile tikz picture')
     parser.add_argument('--table', action='store_true', help='Compile table')
     parser.add_argument('--plain', action='store_true', help='Compile plain text')
@@ -845,8 +897,8 @@ def main():
         create_plain_tex(main_tex, tmp_tex)
 
     # exit now if only create tex option is used
-    # if args.onlytex:
-    #     return 0
+    if args.onlytex:
+        return 0
     #     if args.tex:
     #         if args.output is not None:
     #             tex_path = args.output
