@@ -30,7 +30,6 @@ else:
         text = '\uf04b  '
 
         text += title
-
         if artist.strip():
             text += ' | %s' % artist
         elif album.strip():
