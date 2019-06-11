@@ -3,8 +3,8 @@
 # Open Weather Map API code: http://openweathermap.org
 API_KEY="1fde16c35e78246911c995c455108064"
 
-#CITY_ID="3432043" # La Plata
-CITY_ID="6458783" # Geneva
+CITY_ID="3432043" # La Plata
+#CITY_ID="6458783" # Geneva
 
 ICON_SUNNY="  Clear"
 ICON_CLOUDY="  Cloudy"
