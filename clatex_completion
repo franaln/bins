@@ -8,7 +8,7 @@ _clatex()
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  opts="-h --help -f -c -g -q -o -p -v -b -a -j -t --tex -z --tmp --tikz --table --plain --pdfs --filter --loop --sleep -e --engine --slides --slidesdir"
+  opts="-h --help -f -c -g -q -o -p -v -b -a -j -t --tex -z --tmp --tikz --table --plain --pdfs --filter -w -e --engine --slides --slidesdir"
 
   if [[ "$cur" != -* ]]; then
         _filedir '@(tex)'

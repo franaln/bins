@@ -1,12 +1,14 @@
 #! /usr/bin/env python2.7
 
 import sys
+import argparse
 from bs4 import BeautifulSoup
 import requests
 import re
 
 URL = "https://eztv.ag"
 QUALITY_PREF = "720p"
+#QUALITY_PREF = "1080p"
 
 class EztvAPI(object):
     """
@@ -18,7 +20,7 @@ class EztvAPI(object):
     _season_and_episode = {}
     _patterns = [
         r"S(\d+)E(\d+)",  # Matches SXXEYY (eg. S01E10)
-        r"(\d+)x(\d+)",  # Matches SSxYY (eg. 01x10)
+        r"(\d+)x(\d+)",   # Matches SSxYY (eg. 01x10)
     ]
 
     def __new__(cls, *args, **kwargs):
@@ -93,10 +95,10 @@ class EztvAPI(object):
         if (num_season not in self._season_and_episode):
             self._season_and_episode[num_season] = {}
 
-        if (num_episode not in self._season_and_episode[num_season]):
-            self._season_and_episode[num_season][num_episode] = (name, magnet_link)
+        if (num_episode not in self._season_and_episode[num_season] and QUALITY_PREF in magnet_link):
+            self._season_and_episode[num_season][num_episode] = [(name, magnet_link),]
         elif (QUALITY_PREF in magnet_link):
-            self._season_and_episode[num_season][num_episode] = (name, magnet_link)
+            self._season_and_episode[num_season][num_episode].append((name, magnet_link))
 
         return self._instance
 
@@ -160,15 +162,42 @@ class EztvAPI(object):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 2:
-        print('usage: eztv.py [series-name]')
+    parser = argparse.ArgumentParser(description='')
+
+    parser.add_argument('-n', dest='series_name', help='Series name')
+    parser.add_argument('-s', dest='season', type=int, help='Season')
+    parser.add_argument('-e', dest='episode', type=int, help='Episode')
+    parser.add_argument('-q', dest='quality', help='Quality')
+
+
+    args = parser.parse_args()
+
+    if args.series_name is None:
+        parser.print_help()
         sys.exit(1)
 
-    name = sys.argv[1]
 
-    api = EztvAPI().tv_show(name)
+    eps = EztvAPI().tv_show(args.series_name)
 
-    for name, magnet in api:
-        print ' '
-        print name
-        print magnet
+    if args.season is not None and args.episode is not None:
+
+        list_ = eps.episode(args.season, args.episode)
+
+        for (name, link) in list_:
+            print(name)
+            print(link)
+
+    elif args.season is not None:
+
+        d = eps.season(args.season)
+
+        for n, (name, magnet) in d.items():
+            print name
+            print magnet
+            print ' '
+
+    else:
+        for name, magnet in eps:
+            print name
+            print magnet
+            print ' '

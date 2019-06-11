@@ -4,11 +4,11 @@ import os
 import sys
 import subprocess
 
-ICON_MUTE   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-muted-blocking-panel.png"
-ICON_ZERO   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-zero-panel.png"
-ICON_LOW    = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-low-panel.png"
-ICON_MEDIUM = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-medium-panel.png"
-ICON_HIGH   = "/usr/share/icons/Faenza-Dark/status/16/audio-volume-high-panel.png"
+ICON_MUTE   = "/usr/share/icons/Paper/24x24/panel/audio-volume-muted.svg"
+ICON_ZERO   = "/usr/share/icons/Paper/24x24/panel/audio-volume-zero.svg"
+ICON_LOW    = "/usr/share/icons/Paper/24x24/panel/audio-volume-low.svg"
+ICON_MEDIUM = "/usr/share/icons/Paper/24x24/panel/audio-volume-medium.svg"
+ICON_HIGH   = "/usr/share/icons/Paper/24x24/panel/audio-volume-high.svg"
 
 
 def get_cmd_output(cmd):

@@ -13,7 +13,6 @@ if not status:
     text = '' #'\uf04d'
 
 else:
-
     title  = player.get_title()
     artist = player.get_artist()
     album  = player.get_album()
@@ -22,20 +21,19 @@ else:
         if ' - ' in title:
             title, _ = title.split(' - ')
         else:
-            title = '%s...' % title[:27]
+            title = '%s ...' % title[:27]
 
     if len(artist) > 30:
-        artist = '%s...' % artist[:23]
+        artist = '%s ...' % artist[:23]
 
     if status == 'Playing':
         text = '\uf04b  '
 
-        # text += title
-
-        # if artist.strip():
-        #     text += ' | <b>%s</b>' % artist
-        # elif album.strip():
-        #     text += ' | <b>%s</b>' % album
+        text += title
+        if artist.strip():
+            text += ' | %s' % artist
+        elif album.strip():
+            text += ' | %s' % album
 
     elif status == 'Paused':
         text = '\uf04c  '
