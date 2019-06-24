@@ -596,12 +596,19 @@ class TexWatcher():
         self._main_tex = main_tex
         self._main_pdf = main_pdf
 
+        self._dep_tex = dependencies
+
         self._file = Gio.File.new_for_path(main_tex)
+        self._dep_files = [ Gio.File.new_for_path(dep_tex) for dep_tex in dependencies ]
 
         self.reload_hash()
 
         self._monitor = self._file.monitor_file(Gio.FileMonitorFlags.NONE, None)
         self._monitor.connect("changed", self.on_file_changed)
+
+        self._dep_monitor = [ tex.monitor_file(Gio.FileMonitorFlags.NONE, None) for tex in self._dep_files ]
+        for dep_mon in self._dep_monitor:
+            dep_mon.connect("changed", self.on_file_changed)
 
         self._compiling = False
 
@@ -616,11 +623,15 @@ class TexWatcher():
         with open(self._main_tex) as handle:
                 self._hash = hash(handle.read())
 
+        self._dep_hash = [ hash(open(dep).read()) for dep in self._dep_tex ]
+
+
     def on_file_changed(self, file_, other_file, event_type, user_param):
         old_hash = self._hash
+        old_dep_hash = self._dep_hash
         self.reload_hash()
 
-        if old_hash != self._hash:
+        if old_hash != self._hash or old_dep_hash != self._dep_hash:
             self._compiling = True
             print_msg('File changed. Compiling again ...', INFO)
             _compile(self._main_tex, self._main_pdf)
@@ -918,8 +929,9 @@ def main():
 
     # Continuous compilation
     if args.watcher:
+        dependencies = get_tex_dependencies(main_tex)
         try:
-            _watcher = TexWatcher(main_tex, main_pdf)
+            _watcher = TexWatcher(main_tex, main_pdf, dependencies)
             Gtk.main()
         except KeyboardInterrupt:
             Gtk.main_quit()
