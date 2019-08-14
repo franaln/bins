@@ -801,14 +801,14 @@ def main():
         if args.filter is not None:
             new_pdfs = []
 
-            if '&' in args.filter:
-                filters = args.filter.split('&')
+            if '&&' in args.filter:
+                filters = args.filter.split('&&')
                 for pdf in pdfs:
                     if all([ft in pdf for ft in filters]):
                         new_pdfs.append(pdf)
 
-            elif '|' in args.filter:
-                filters = args.filter.split('&')
+            elif '||' in args.filter:
+                filters = args.filter.split('||')
                 for pdf in pdfs:
                     if any([ft in pdf for ft in filters]):
                         new_pdfs.append(pdf)
