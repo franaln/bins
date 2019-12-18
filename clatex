@@ -102,11 +102,10 @@ $body$
 """
 
 template_slides = r"""
-\documentclass[center,10pt,cm,aspectratio=169]{beamer}
+\documentclass[center,9pt,cm,aspectratio=169]{beamer}
 
-\usetheme{minicasual}
+\usetheme{mini}
 \input{physics.tex}
-\input{susy.tex}
 
 \title{}
 \author{Francisco Alonso}
@@ -131,7 +130,7 @@ template_slides = r"""
 template_python_fns = r"""
 # functions
 def bdoc():
-    print(r'\documentclass[center,10pt,cm,aspectratio=169]{beamer}')
+    print(r'\documentclass[center,9pt,cm,aspectratio=169]{beamer}')
     print(r'\usetheme{mini}')
     print(r'\begin{document}')
     print(r'\centering')
@@ -253,7 +252,7 @@ def get_bibtex_style(main_tex):
 #
 def bytes_to_human(num):
     num = int(num)
-    for unit in ['','K','M','G','T','P','E','Z']:
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
         if abs(num) < 1024.0:
             return "%3.1f %sB" % (num, unit)
         num /= 1024.0
@@ -344,16 +343,14 @@ def colorize_bibtex_output(logfile):
         print_msg("cannot open bibtex logfile: %s" % logfile, WARNING)
         return
 
-    with log:
+    for line in log:
+        m = re_updatefile.match (line)
+        if m:
+            current_bib = m.group ("filename")
 
-        for line in log:
-            m = re_updatefile.match (line)
-            if m:
-                current_bib = m.group ("filename")
-
-            m = re_error.match (line)
-            if m:
-                print_msg('%s %s %s' (m.group("kind"), int(m.group("line")),  m.group("text")), INFO)
+        m = re_error.match (line)
+        if m:
+            print_msg('%s %s %s' % (m.group("kind"), int(m.group("line")),  m.group("text")), INFO)
 
 
 #
@@ -481,7 +478,7 @@ def create_tikz_tex(input_tex, output_tex):
 
 def create_table_tex(input_tex, output_tex):
 
-    tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \begin{document} \pagestyle{empty}'
+    tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \usepackage{multirow} \begin{document} \pagestyle{empty}'
     tex += '\n'
     tex += open(input_tex).read()
     tex += '\n\\end{document}'
@@ -636,6 +633,83 @@ class TexWatcher():
             print_msg('File changed. Compiling again ...', INFO)
             _compile(self._main_tex, self._main_pdf)
             self._compiling = False
+
+
+# from watchdog.observers import Observer
+# from .events import ImagesEventHandler
+# from watchdog.events import FileSystemEventHandler
+
+# class TexEventHandler(FileSystemEventHandler):
+
+#     def __init__(self):
+
+#         self._compiling = False
+
+#     #     self.reload_hash()
+
+#     # def reload_hash(self):
+#     #     with open(self._main_tex) as handle:
+#     #             self._hash = hash(handle.read())
+
+#     #     self._dep_hash = [ hash(open(dep).read()) for dep in self._dep_tex ]
+
+#     def on_modified(self, event):
+#         # old_hash = self._hash
+#         # old_dep_hash = self._dep_hash
+#         # self.reload_hash()
+
+#         # if old_hash != self._hash or old_dep_hash != self._dep_hash:
+#         self._compiling = True
+#         print_msg('File changed. Compiling again ...', INFO)
+#         _compile(event, self._main_pdf)
+#         self._compiling = False
+
+
+#         self.process(event)
+
+#     def process(self, event):
+#         filename, ext = os.path.splitext(event.src_path)
+#         filename = f"{filename}_thumbnail.jpg"
+
+#         image = Image.open(event.src_path)
+#         image = grayscale(image)
+#         image.thumbnail(self.THUMBNAIL_SIZE)
+#         image.save(filename)
+
+# class TexWatcher:
+
+#     def __init__(self, main_tex, main_pdf, dependecies=[]):
+
+#         self._main_tex = main_tex
+#         self._main_pdf = main_pdf
+
+#         self._dep_tex = dependencies
+
+#         self.__event_observer = Observer()
+#         self.__event_handler = EventHandler()
+
+#     def run(self):
+#         self.start()
+#         try:
+#             while True:
+#                 time.sleep(1)
+#         except KeyboardInterrupt:
+#             self.stop()
+
+#     def start(self):
+#         self.__schedule()
+#         self.__event_observer.start()
+
+#     def stop(self):
+#         self.__event_observer.stop()
+#         self.__event_observer.join()
+
+#     def __schedule(self):
+#         self.__event_observer.schedule(self.__event_handler, self.__main_tex)
+#         for tex in self._dep_files:
+#             self.__event_observer.schedule(self.__event_handler, tex)
+
+
 
 
 def _compile(main_tex, main_pdf, force=False, need_crop=False):
