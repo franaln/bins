@@ -28,7 +28,7 @@ get_app() {
 
         # archive
         tar|gz|rar|zip|7z|lha|bz2|tgz)
-            app="file-roller" ;;
+            app="ark" ;;
 
         # video
         mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)
@@ -40,11 +40,11 @@ get_app() {
 
         #torrent
         torrent)
-            app="transmission-gtk" ;;
+            app="transmission-qt" ;;
 
         #pdf
         pdf|ps|djvu)
-            app="evince" ;;
+            app="okular" ;;
 
         #eps
         eps)
