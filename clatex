@@ -777,6 +777,7 @@ def main():
     parser.add_argument('--table', action='store_true', help='Compile table')
     parser.add_argument('--plain', action='store_true', help='Compile plain text')
     parser.add_argument('-w', dest='watcher', action='store_true', help='Watch file for changes and compile (needs Gtk)')
+    parser.add_argument('--nocrop', action='store_true', help='Don\'t crop pdf output')
 
     # Merge pdfs in slides
     parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
@@ -852,7 +853,6 @@ def main():
 
     # Slides from input pdfs (--pdfs)
     if args.pdfs:
-
         # Get pdf files from inputs. If input is None use all .pdf from current directory
         pdfs = []
         if not inputs:
@@ -860,8 +860,8 @@ def main():
 
         elif isinstance(inputs, list):
             for inp in inputs:
-                if os.path.isdir(inputs):
-                    pdfs.extend([ os.path.join(inputs, i) for i in os.listdir(inputs) if i.endswith('.pdf') ])
+                if os.path.isdir(inp):
+                    pdfs.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i.endswith('.pdf') ])
                 else:
                     pdfs.extend([ i for i in inputs if i.endswith('.pdf') and os.path.isfile(i) ])
         else:
@@ -874,14 +874,14 @@ def main():
         if args.filter is not None:
             new_pdfs = []
 
-            if '&' in args.filter:
-                filters = args.filter.split('&')
+            if '&&' in args.filter:
+                filters = args.filter.split('&&')
                 for pdf in pdfs:
                     if all([ft in pdf for ft in filters]):
                         new_pdfs.append(pdf)
 
-            elif '|' in args.filter:
-                filters = args.filter.split('&')
+            elif '||' in args.filter:
+                filters = args.filter.split('||')
                 for pdf in pdfs:
                     if any([ft in pdf for ft in filters]):
                         new_pdfs.append(pdf)
@@ -963,14 +963,16 @@ def main():
 
     elif is_tikz:
         tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
-        need_crop = True
+        need_crop = True if not args.nocrop else False
+        args.engine = 'pdflatex'
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
         create_tikz_tex(main_tex, tmp_tex)
 
     elif is_table:
         tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
-        need_crop = True
+        need_crop = True if not args.nocrop else False
+        args.engine = 'pdflatex'
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
         create_table_tex(main_tex, tmp_tex)
