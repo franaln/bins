@@ -476,11 +476,14 @@ def create_tikz_tex(input_tex, output_tex):
         of.write(template_after)
 
 
-def create_table_tex(input_tex, output_tex):
+def create_table_tex(input_tex, output_tex, scale):
 
     tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \usepackage{multirow} \begin{document} \pagestyle{empty}'
     tex += '\n'
-    tex += open(input_tex).read()
+    if scale is not None:
+        tex += '\scalebox{%s}{%s}' % (float(scale), open(input_tex).read())
+    else:
+        tex += open(input_tex).read()
     tex += '\n\\end{document}'
 
     with open(output_tex, 'wt', encoding='utf-8') as of:
@@ -778,6 +781,7 @@ def main():
     parser.add_argument('--plain', action='store_true', help='Compile plain text')
     parser.add_argument('-w', dest='watcher', action='store_true', help='Watch file for changes and compile (needs Gtk)')
     parser.add_argument('--nocrop', action='store_true', help='Don\'t crop pdf output')
+    parser.add_argument('--scale', help='Scale')
 
     # Merge pdfs in slides
     parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
@@ -975,7 +979,7 @@ def main():
         args.engine = 'pdflatex'
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
-        create_table_tex(main_tex, tmp_tex)
+        create_table_tex(main_tex, tmp_tex, args.scale)
 
     elif is_plain:
         tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
