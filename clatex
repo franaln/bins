@@ -285,8 +285,8 @@ def colorize_latex_output(logfile, show=True):
 
                 name = os.path.basename(sline[3])
                 pages = sline[4][1:]
-                size = bytes_to_human(sline[6])
-                compile_info = (pages, size, n_warning, n_error)
+                #size = bytes_to_human(sline[6])
+                compile_info = (pages, n_warning, n_error)
             except:
                 pass
 
@@ -297,8 +297,7 @@ def colorize_latex_output(logfile, show=True):
 
                 name = sline[3]
                 pages = sline[4][1:].replace(' pages', '')
-                size = 0
-                compile_info = (pages, size, n_warning, n_error)
+                compile_info = (pages, n_warning, n_error)
             except:
                 pass
 
@@ -747,7 +746,10 @@ def _compile(main_tex, main_pdf, force=False, need_crop=False):
         else:
             subprocess.call(['mv', tmp_pdf_file, main_pdf])
 
-        pages, size, n_warning, n_error = compile_info
+        pages, n_warning, n_error = compile_info
+
+        size = bytes_to_human(os.stat(main_pdf).st_size)
+
         msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (main_pdf, pages, size, n_warning, n_error)
         print_msg(msg, GOOD)
 
