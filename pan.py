@@ -169,7 +169,6 @@ if args.config_file is not None:
     # Print recipe
     print('Using configfile {0} for total weight = {1}\n'.format(args.config_file, args.total))
 
-
     # Fix
     print('+---------------------------------+')
     for ing, w in final_recipe.items():
@@ -188,8 +187,6 @@ if args.config_file is not None:
             w_s = '{0:.1f}'.format(w)
         else:
             w_s = '{0:.0f}'.format(w)
-
-
 
         print('|{0:<20} | {1:>10}|'.format(ing, w_s))
 
