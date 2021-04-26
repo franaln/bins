@@ -489,7 +489,7 @@ def create_table_tex(input_tex, output_tex, scale):
         of.write(tex)
 
 
-def create_pdfs_tex(input_pdfs, output_tex, matrix):
+def create_plots_tex(input_plots, output_tex, matrix):
 
     header = r"""%% Created with clatex
 \documentclass[center,10pt,cm,aspectratio=169]{beamer}
@@ -515,12 +515,12 @@ def create_pdfs_tex(input_pdfs, output_tex, matrix):
 
     #chunks = [pdf_files[x:x+args.cols] for x in xrange(0, len(pdf_files), args.cols)]
 
-    for pdf in input_pdfs:
+    for plot in input_plots:
 
-        if not pdf.endswith('.pdf'):
+        if plot[-3:] not in ('pdf', 'png'):
             continue
 
-        title = pdf[:-4].replace('_', '\_')
+        title = plot[:-4].replace('_', '\_')
 
         if len(title) > 75:
             title = '{\\tiny %s}' % title
@@ -533,10 +533,11 @@ def create_pdfs_tex(input_pdfs, output_tex, matrix):
 \begin{frame}{%s}
     \includegraphics[width=0.9\textwidth,height=0.9\textheight,keepaspectratio]{%s}
 \end{frame}
-""" % (title, pdf)
+""" % (title, plot)
         counter += 1
 
     if not body:
+        print('No plots to add')
         return None
 
     text = header + body + footer
@@ -544,7 +545,7 @@ def create_pdfs_tex(input_pdfs, output_tex, matrix):
     with open(output_tex, 'w+') as f:
         f.write(text)
 
-    print_msg('Created slides "%s" with %i pdfs' % (output_tex, counter), GOOD)
+    print_msg('Created slides "%s" with %i plots' % (output_tex, counter), GOOD)
 
     return
 
@@ -744,7 +745,8 @@ def _compile(main_tex, main_pdf, force=False, need_crop=False):
         if need_crop:
             crop_pdf(tmp_pdf_file, main_pdf)
         else:
-            subprocess.call(['mv', tmp_pdf_file, main_pdf])
+            move_file(tmp_pdf_file, main_pdf)
+            #subprocess.call(['mv', tmp_pdf_file, main_pdf])
 
         pages, n_warning, n_error = compile_info
 
@@ -787,6 +789,7 @@ def main():
 
     # Merge pdfs in slides
     parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
+    parser.add_argument('--plots', action='store_true', help='Merge plots in slides')
     parser.add_argument('--filter', help='Filter files (to use with --pdfs)')
     parser.add_argument('--sort', type=int, default=None, help='')
     parser.add_argument('--sort-sep', dest='sort_sep', default='_', help='')
@@ -858,51 +861,51 @@ def main():
     need_crop = False
 
     # Slides from input pdfs (--pdfs)
-    if args.pdfs:
-        # Get pdf files from inputs. If input is None use all .pdf from current directory
-        pdfs = []
+    if args.plots or args.pdfs:
+        # Get plot files from inputs. If input is None use all .pdf from current directory
+        plots = []
         if not inputs:
-            pdfs = [ i for i in os.listdir('.') if i.endswith('.pdf') and i != 'pdfs.pdf']
+            plots = [ i for i in os.listdir('.') if i[-3:] in ('pdf', 'png') and i != 'plots.pdf' ]
 
         elif isinstance(inputs, list):
             for inp in inputs:
                 if os.path.isdir(inp):
-                    pdfs.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i.endswith('.pdf') ])
+                    pdfs.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i[-3:] in ('pdf', 'png') ])
                 else:
-                    pdfs.extend([ i for i in inputs if i.endswith('.pdf') and os.path.isfile(i) ])
+                    pdfs.extend([ i for i in inputs if i[-3:] in ('pdf', 'png') and os.path.isfile(i) ])
         else:
             if os.path.isdir(inputs):
-                pdfs = [ os.path.join(inputs, i) for i in os.listdir(inputs) if i.endswith('.pdf') ]
+                plots = [ os.path.join(inputs, i) for i in os.listdir(inputs) if i[-3:] in ('pdf', 'png') ]
             else:
-                pdfs.append(inputs)
+                plots.append(inputs)
 
         # Filter pdfs
         if args.filter is not None:
-            new_pdfs = []
+            new_plots = []
 
             if '&&' in args.filter:
                 filters = args.filter.split('&&')
-                for pdf in pdfs:
+                for plot in plots:
                     if all([ft in pdf for ft in filters]):
-                        new_pdfs.append(pdf)
+                        new_plots.append(plot)
 
             elif '||' in args.filter:
                 filters = args.filter.split('||')
-                for pdf in pdfs:
+                for plot in plots:
                     if any([ft in pdf for ft in filters]):
-                        new_pdfs.append(pdf)
+                        new_plots.append(plot)
             else:
-                for pdf in pdfs:
-                    if args.filter in pdf:
-                        new_pdfs.append(pdf)
+                for plot in plots:
+                    if args.filter in plot:
+                        new_plots.append(plot)
 
-            pdfs = new_pdfs
+            plots = new_plots
 
         # Sort pdfs
         if args.sort is not None:
-            pdfs.sort(key = lambda x: x.split(args.sort_sep)[args.sort-1])
+            plots.sort(key = lambda x: x.split(args.sort_sep)[args.sort-1])
         else:
-            pdfs.sort()
+            plots.sort()
 
 
         # Matrix/Columns
@@ -916,9 +919,9 @@ def main():
         # ...
 
 
-        main_tex = '%s/pdfs.tex' % clatex_dir if args.tex is None else args.tex
+        main_tex = '%s/plots.tex' % clatex_dir if args.tex is None else args.tex
 
-        create_pdfs_tex(pdfs, main_tex, matrix)
+        create_plots_tex(plots, main_tex, matrix)
 
 
     elif not inputs:
