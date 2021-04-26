@@ -886,13 +886,13 @@ def main():
             if '&&' in args.filter:
                 filters = args.filter.split('&&')
                 for plot in plots:
-                    if all([ft in pdf for ft in filters]):
+                    if all([ft in plot for ft in filters]):
                         new_plots.append(plot)
 
             elif '||' in args.filter:
                 filters = args.filter.split('||')
                 for plot in plots:
-                    if any([ft in pdf for ft in filters]):
+                    if any([ft in plot for ft in filters]):
                         new_plots.append(plot)
             else:
                 for plot in plots:
