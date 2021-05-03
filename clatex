@@ -139,8 +139,9 @@ def edoc():
     print(r"\end{document}")
 
 def bframe(title=''):
+    sanitized_title = title.replace('_', '\_').strip()
     print()
-    print(r'\begin{frame}{%s}' % title)
+    print(r'\begin{frame}{%s}' % sanitized_title)
     print()
 
 def eframe():
@@ -159,6 +160,9 @@ def text(_text):
 
 def img(width, path):
     print(r'\includegraphics[width=%s\textwidth]{%s}' % (width, path))
+
+bfr = bframe
+efr = eframe
 # ------
 """
 
@@ -797,8 +801,8 @@ def main():
     parser.add_argument('--matrix', help='')
 
     # Templates
-    parser.add_argument('--slides', help='Create slides template')
-    parser.add_argument('--slidesdir', help='Create slides directory with template')
+    parser.add_argument('--sl', dest='slides', help='Create slides template')
+    parser.add_argument('--sd', dest='slidesdir', help='Create slides directory with template')
 
 
     global args
@@ -814,24 +818,21 @@ def main():
     if args.slidesdir is not None:
         name = args.slidesdir
 
-        print_msg('Creating slides directory in %s' % name, GOOD)
-
         os.system('mkdir -p %s' % name)
         os.system('mkdir -p %s/images' % name)
 
         with open('%s/slides.tex' % name, 'w+') as f:
             f.write(template_slides)
 
+        print_msg('Slides directory created: %s' % name, GOOD)
         return 0
 
     elif args.slides is not None:
         name = args.slides
-
-        print_msg('Created slides template: %s.tex' % name, GOOD)
-
         with open('%s.tex' % name, 'w+') as f:
             f.write(template_slides)
 
+        print_msg('Slides template created: %s.tex' % name, GOOD)
         return 0
 
 
