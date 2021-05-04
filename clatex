@@ -139,7 +139,7 @@ def edoc():
     print(r"\end{document}")
 
 def bframe(title=''):
-    sanitized_title = title.replace('_', '\_').strip()
+    sanitized_title = title.replace('_', r'\_')
     print()
     print(r'\begin{frame}{%s}' % sanitized_title)
     print()
