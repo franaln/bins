@@ -47,10 +47,6 @@ def get_total_percentage(recipe):
     return total
 
 
-def get_ingredients_column_width(recipe):
-
-    return width
-
 
 parser = argparse.ArgumentParser(description='Pan calculations')
 
@@ -165,7 +161,6 @@ if args.config_file is not None:
 
         final_recipe[ing] = w
 
-
     # Print recipe
     print('Using configfile {0} for total weight = {1}\n'.format(args.config_file, args.total))
 
@@ -173,12 +168,14 @@ if args.config_file is not None:
     print('+---------------------------------+')
     for ing, w in final_recipe.items():
 
+        ingl = ing.lower()
+
         if 'TZ' in recipe:
-            if ing == 'Harina':
+            if ingl in ('harina', 'flour'):
                 w -= final_recipe['TZ']
-            elif ing == 'Agua':
+            elif ingl in ('agua', 'water'):
                 w -= (final_recipe['TZ']*5)
-            elif ing == 'Leche':
+            elif ingl in ('leche', 'milk'):
                 w -= (final_recipe['TZ']*5)
 
         if ing == 'TZ':

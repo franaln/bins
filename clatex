@@ -481,7 +481,14 @@ def create_tikz_tex(input_tex, output_tex):
 
 def create_table_tex(input_tex, output_tex, scale):
 
-    tex = r'\documentclass{article} \usepackage{graphicx} \usepackage[landscape]{geometry} \usepackage{multirow} \begin{document} \pagestyle{empty}'
+    tex = r'''\documentclass{article}
+\usepackage{graphicx}
+\usepackage[landscape]{geometry}
+\usepackage{multirow}
+\usepackage{booktabs}
+\begin{document}
+\pagestyle{empty}\n'''
+
     tex += '\n'
     if scale is not None:
         tex += '\scalebox{%s}{%s}' % (float(scale), open(input_tex).read())
