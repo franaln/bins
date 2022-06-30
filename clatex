@@ -560,14 +560,13 @@ def create_plots_tex(input_plots, output_tex, matrix):
 
     return
 
-def create_python_text(input_py, output_tex):
+def create_python_text(input_py, tmp_py, output_tex):
 
     python_code = template_python_fns + \
         template_python_before + \
         open(input_py).read() +\
         template_python_after
 
-    tmp_py = input_py+'.tmp.py'
     with open(tmp_py, 'w+') as f:
         f.write(python_code)
 
@@ -973,10 +972,11 @@ def main():
     tmp_tex = None
 
     if is_python:
+        tmp_py  = '%s/%s.tmp.py' % (clatex_dir, main_name)
         tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
-        create_python_text(main_tex, tmp_tex)
+        create_python_text(main_tex, tmp_py, tmp_tex)
 
     elif is_tikz:
         tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex

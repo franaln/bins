@@ -52,7 +52,8 @@ get_app() {
 
         #images
         png|jpg|jpeg|JPG|JPEG|gif)
-            command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
+            app="gwenview" ;;
+        ##command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
 
         #html
         html?|swf)
@@ -71,7 +72,7 @@ get_app() {
         text)
             app="$EDITOR" ;;
         image)
-            app="sxiv" ;;
+            app="gwenview" ;;
     esac
 
     if [[ -n "$1" ]] ; then
