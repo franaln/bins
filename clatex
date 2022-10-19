@@ -161,8 +161,8 @@ def text(_text):
 def img(width, path):
     print(r'\includegraphics[width=%s\textwidth]{%s}' % (width, path))
 
-bfr = bframe
-efr = eframe
+bf = bframe
+ef = eframe
 # ------
 """
 
@@ -808,6 +808,7 @@ def main():
     parser.add_argument('--nocrop', action='store_true', help='Don\'t crop pdf output')
     parser.add_argument('--scale', help='Scale')
     parser.add_argument('--nodir', action='store_true', help='No clatex output dir')
+    parser.add_argument('--atlas', action='store_true', help='Use --nodir and pdflatex engine (for ATLAS notes/papers) ')
 
     # Merge pdfs in slides
     parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
@@ -825,6 +826,10 @@ def main():
 
     global args
     args = parser.parse_args()
+
+    if args.atlas:
+        args.nodir = True
+        args.engine = 'pdflatex'
 
 
     global clatex_dir
@@ -895,9 +900,9 @@ def main():
         elif isinstance(inputs, list):
             for inp in inputs:
                 if os.path.isdir(inp):
-                    pdfs.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i[-3:] in ('pdf', 'png') ])
+                    plots.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i[-3:] in ('pdf', 'png') ])
                 else:
-                    pdfs.extend([ i for i in inputs if i[-3:] in ('pdf', 'png') and os.path.isfile(i) ])
+                    plots.extend([ i for i in inputs if i[-3:] in ('pdf', 'png') and os.path.isfile(i) ])
         else:
             if os.path.isdir(inputs):
                 plots = [ os.path.join(inputs, i) for i in os.listdir(inputs) if i[-3:] in ('pdf', 'png') ]
