@@ -51,8 +51,9 @@ get_app() {
             app="evince" ;;
 
         #images
+        #command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
         png|jpg|jpeg|JPG|JPEG|gif)
-            command -v sxiv >/dev/null 2>&1 && app="sxiv" || app="display" ;;
+            app="gwenview" ;;
 
         #html
         html?|swf)
