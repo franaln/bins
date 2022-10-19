@@ -31,7 +31,7 @@ get_app() {
             app="ark" ;;
 
         # video
-        mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso)
+        mkv|mpe?g|mkv|avi|mp4|wmv|rmvb|as[fx]|divx|vob|ogm|ra?m|flv|part|iso|vid)
             app="mpv" ;;
 
         #audio
@@ -72,7 +72,7 @@ get_app() {
         text)
             app="$EDITOR" ;;
         image)
-            app="sxiv" ;;
+            app="gwenview" ;;
     esac
 
     if [[ -n "$1" ]] ; then

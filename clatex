@@ -161,8 +161,8 @@ def text(_text):
 def img(width, path):
     print(r'\includegraphics[width=%s\textwidth]{%s}' % (width, path))
 
-bfr = bframe
-efr = eframe
+bf = bframe
+ef = eframe
 # ------
 """
 
@@ -359,11 +359,14 @@ def colorize_bibtex_output(logfile):
 #
 # Compile tex
 #
+def get_clatex_path(fname):
+    return os.path.join(clatex_dir, fname) if clatex_dir is not None else fname
+
 def compile_tex(input_path, output_path):
 
     name = os.path.basename(input_path)[:-4]
 
-    tmp_pdf_file = clatex_dir + '/%s.pdf' % name
+    tmp_pdf_file = get_clatex_path('%s.pdf' % name)
 
     if args.only:
         filecmd = r'"\includeonly{%s}\input{%s}"' % (args.only, input_path)
@@ -371,9 +374,15 @@ def compile_tex(input_path, output_path):
         filecmd = input_path
 
     if args.verbose:
-        pdflatex_cmd = '%s -output-directory=%s -file-line-error %s' % (args.engine, clatex_dir, filecmd)
+        if clatex_dir is None:
+            pdflatex_cmd = '%s -file-line-error %s' % (args.engine, filecmd)
+        else:
+            pdflatex_cmd = '%s -output-directory=%s -file-line-error %s' % (args.engine, clatex_dir, filecmd)
     else:
-        pdflatex_cmd = '%s -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (args.engine, clatex_dir, filecmd)
+        if clatex_dir is None:
+            pdflatex_cmd = '%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (args.engine, filecmd)
+        else:
+            pdflatex_cmd = '%s -output-directory=%s -interaction=batchmode -file-line-error --shell-escape %s > /dev/null' % (args.engine, clatex_dir, filecmd)
 
     if os.path.isdir('images'):
         os.environ['TEXINPUTS'] = './/:./images//:'
@@ -384,7 +393,8 @@ def compile_tex(input_path, output_path):
 
     st = subprocess.call(pdflatex_cmd, shell=True)
 
-    logfile = '%s/%s.log' % (clatex_dir, name)
+    logfile = get_clatex_path('%s.log' % name)
+
     if os.path.isfile(logfile):
         compile_ok, compile_info = colorize_latex_output(logfile, False)
 
@@ -416,7 +426,6 @@ def compile_tex(input_path, output_path):
         subprocess.call(pdflatex_cmd, shell=True)
         subprocess.call(pdflatex_cmd, shell=True)
 
-    logfile = '%s/%s.log' % (clatex_dir, name)
     if os.path.isfile(logfile):
         compile_ok, compile_info = colorize_latex_output(logfile)
 
@@ -523,7 +532,6 @@ def create_plots_tex(input_plots, output_tex, matrix):
     body = ""
     counter = 0
 
-
     #chunks = [pdf_files[x:x+args.cols] for x in xrange(0, len(pdf_files), args.cols)]
 
     for plot in input_plots:
@@ -560,14 +568,13 @@ def create_plots_tex(input_plots, output_tex, matrix):
 
     return
 
-def create_python_text(input_py, output_tex):
+def create_python_text(input_py, tmp_py, output_tex):
 
     python_code = template_python_fns + \
         template_python_before + \
         open(input_py).read() +\
         template_python_after
 
-    tmp_py = input_py+'.tmp.py'
     with open(tmp_py, 'w+') as f:
         f.write(python_code)
 
@@ -592,6 +599,10 @@ def move_file(old_path, new_path):
     shutil.move(old_path, new_path)
 
 def clean(fname):
+    if clatex_dir is None:
+        # actually we have to remove all .aux/.pdf files
+        return
+
     try:
         os.unlink(fname)
     except FileNotFoundError:
@@ -757,7 +768,6 @@ def _compile(main_tex, main_pdf, force=False, need_crop=False):
             crop_pdf(tmp_pdf_file, main_pdf)
         else:
             move_file(tmp_pdf_file, main_pdf)
-            #subprocess.call(['mv', tmp_pdf_file, main_pdf])
 
         pages, n_warning, n_error = compile_info
 
@@ -797,6 +807,8 @@ def main():
     parser.add_argument('-w', dest='watcher', action='store_true', help='Watch file for changes and compile (needs Gtk)')
     parser.add_argument('--nocrop', action='store_true', help='Don\'t crop pdf output')
     parser.add_argument('--scale', help='Scale')
+    parser.add_argument('--nodir', action='store_true', help='No clatex output dir')
+    parser.add_argument('--atlas', action='store_true', help='Use --nodir and pdflatex engine (for ATLAS notes/papers) ')
 
     # Merge pdfs in slides
     parser.add_argument('--pdfs', action='store_true', help='Merge pdfs in slides')
@@ -815,9 +827,18 @@ def main():
     global args
     args = parser.parse_args()
 
+    if args.atlas:
+        args.nodir = True
+        args.engine = 'pdflatex'
+
 
     global clatex_dir
-    clatex_dir = '/tmp/clatex' if args.tmp else '.clatex'
+    if args.nodir:
+        clatex_dir = None
+    elif args.tmp:
+        clatex_dir = '/tmp/clatex'
+    else:
+        clatex_dir = '.clatex'
 
     #
     # Templates (create and exit!)
@@ -853,10 +874,11 @@ def main():
 
 
     # create clatex dir
-    try:
-        os.makedirs(clatex_dir)
-    except OSError as exception:
-        pass
+    if clatex_dir is not None:
+        try:
+            os.makedirs(clatex_dir)
+        except OSError as exception:
+            pass
 
 
     #
@@ -878,9 +900,9 @@ def main():
         elif isinstance(inputs, list):
             for inp in inputs:
                 if os.path.isdir(inp):
-                    pdfs.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i[-3:] in ('pdf', 'png') ])
+                    plots.extend([ os.path.join(inp, i) for i in os.listdir(inp) if i[-3:] in ('pdf', 'png') ])
                 else:
-                    pdfs.extend([ i for i in inputs if i[-3:] in ('pdf', 'png') and os.path.isfile(i) ])
+                    plots.extend([ i for i in inputs if i[-3:] in ('pdf', 'png') and os.path.isfile(i) ])
         else:
             if os.path.isdir(inputs):
                 plots = [ os.path.join(inputs, i) for i in os.listdir(inputs) if i[-3:] in ('pdf', 'png') ]
@@ -954,7 +976,6 @@ def main():
     is_tikz = args.tikz
     is_table = args.table
     is_plain = args.plain
-
     is_python = main_tex.endswith('.py')
 
     # check tikz/table/plain
@@ -973,13 +994,14 @@ def main():
     tmp_tex = None
 
     if is_python:
-        tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
+        tmp_py  = get_clatex_path('%s.tmp.py' % main_name)
+        tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
-        create_python_text(main_tex, tmp_tex)
+        create_python_text(main_tex, tmp_py, tmp_tex)
 
     elif is_tikz:
-        tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
+        tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
         need_crop = True if not args.nocrop else False
         args.engine = 'pdflatex'
 
@@ -987,7 +1009,7 @@ def main():
         create_tikz_tex(main_tex, tmp_tex)
 
     elif is_table:
-        tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
+        tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
         need_crop = True if not args.nocrop else False
         args.engine = 'pdflatex'
 
@@ -995,7 +1017,7 @@ def main():
         create_table_tex(main_tex, tmp_tex, args.scale)
 
     elif is_plain:
-        tmp_tex = '%s/%s.tex' % (clatex_dir, main_name) if args.tex is None else args.tex
+        tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
 
         print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
         create_plain_tex(main_tex, tmp_tex)
@@ -1030,7 +1052,7 @@ def main():
 
 
     # Clean temporary files
-    if not args.keep_tmp_files and not args.tmp:
+    if not args.keep_tmp_files and not args.tmp and not args.nodir:
         clean(clatex_dir)
 
     # Open output pdf
