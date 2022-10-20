@@ -25,24 +25,25 @@ C_ERROR   = '\033[0;31m'
 C_INFO    = '\033[0;32m'
 C_RESET   = '\033[0m'
 
-INFO = 0
-GOOD = 1
-WARNING = 2
-ERROR  = 3
-
-def print_msg(msg, level):
+def print_info(msg):
     if args.quiet:
         return
+    print(msg)
 
-    if level == INFO:
-        print(msg)
-    elif level == GOOD:
-        print(C_INFO + msg + C_RESET)
-    elif level == WARNING:
-        print(C_WARNING + msg + C_RESET)
-    elif level == ERROR:
-        print(C_ERROR + msg + C_RESET)
+def print_good(msg):
+    if args.quiet:
+        return
+    print(C_INFO + msg + C_RESET)
 
+def print_warn(msg):
+    if args.quiet:
+        return
+    print(C_WARNING + msg + C_RESET)
+
+def print_err(msg):
+    if args.quiet:
+        return
+    print(C_ERROR + msg + C_RESET)
 
 # templates
 template_pandoc = r"""
@@ -198,7 +199,7 @@ def find_tex_file():
         return None
 
     if len(main) > 1:
-        print_msg('More than one main file was found', ERROR)
+        print_err('More than one main file was found')
         return None
     else:
         return main[0]
@@ -308,28 +309,28 @@ def colorize_latex_output(logfile, show=True):
         elif 'No pages of output' in line:
             compile_ok = False
             if show:
-                print_msg(line, ERROR)
+                print_err(line)
 
         elif 'no output PDF file produced!' in line:
             compile_ok = False
             if show:
-                print_msg(line, ERROR)
+                print_err(line)
 
         if 'Underfull' in line or 'Overfull' in line or 'Warning:' in line:
             n_warning += 1
             if show and show_warnings:
-                print_msg(line, WARNING)
+                print_warn(line)
 
         if '*** (job aborted, no legal \end found)' in line:
             compile_ok = False
             if show:
-                print_msg(line, ERROR)
+                print_err(line)
             n_error += 1
 
         le = line_error.match(line)
         if le:
             if show:
-                print_msg('%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]), ERROR)
+                print_err('%s (in %s, line %s)' % (le.groups()[2], le.groups()[0], le.groups()[1]))
             n_error += 1
 
     return compile_ok, compile_info
@@ -343,7 +344,7 @@ def colorize_bibtex_output(logfile):
     try:
         log = open(logfile, "r")
     except:
-        print_msg("cannot open bibtex logfile: %s" % logfile, WARNING)
+        print_warn("cannot open bibtex logfile: %s" % logfile)
         return
 
     for line in log:
@@ -353,7 +354,7 @@ def colorize_bibtex_output(logfile):
 
         m = re_error.match (line)
         if m:
-            print_msg('%s %s %s' % (m.group("kind"), int(m.group("line")),  m.group("text")), INFO)
+            print_info('%s %s %s' % (m.group("kind"), int(m.group("line")),  m.group("text")))
 
 
 #
@@ -403,7 +404,7 @@ def compile_tex(input_path, output_path):
 
     if compile_ok and args.bibtex:
 
-        print('Running bibtex')
+        print_info('Running bibtex')
         pwd = os.getcwd()
 
         os.environ['TEXMFOUTPUT'] = clatex_dir+':'
@@ -556,7 +557,7 @@ def create_plots_tex(input_plots, output_tex, matrix):
         counter += 1
 
     if not body:
-        print('No plots to add')
+        print_err('No plots to add')
         return None
 
     text = header + body + footer
@@ -564,7 +565,7 @@ def create_plots_tex(input_plots, output_tex, matrix):
     with open(output_tex, 'w+') as f:
         f.write(text)
 
-    print_msg('Created slides "%s" with %i plots' % (output_tex, counter), GOOD)
+    print_good('Created slides "%s" with %i plots' % (output_tex, counter))
 
     return
 
@@ -655,7 +656,7 @@ class TexWatcher():
 
         if old_hash != self._hash or old_dep_hash != self._dep_hash:
             self._compiling = True
-            print_msg('File changed. Compiling again ...', INFO)
+            print_info('File changed. Compiling again ...')
             _compile(self._main_tex, self._main_pdf)
             self._compiling = False
 
@@ -739,7 +740,7 @@ class TexWatcher():
 
 def _compile(main_tex, main_pdf, force=False, need_crop=False):
 
-    print_msg('Compiling tex %s --> %s' % (main_tex, main_pdf), INFO)
+    print_info('Compiling tex %s --> %s' % (main_tex, main_pdf))
 
     need_compile = False
     if need_compile or force or not os.path.isfile(main_pdf):
@@ -774,10 +775,10 @@ def _compile(main_tex, main_pdf, force=False, need_crop=False):
         size = bytes_to_human(os.stat(main_pdf).st_size)
 
         msg = 'Output written on %s, %s page(s), %s, %s warning(s), %s error(s).' % (main_pdf, pages, size, n_warning, n_error)
-        print_msg(msg, GOOD)
+        print_good(msg)
 
     else:
-        print_msg('Nothing to be done', INFO)
+        print_info('Nothing to be done')
 
 
 
@@ -852,7 +853,7 @@ def main():
         with open('%s/slides.tex' % name, 'w+') as f:
             f.write(template_slides)
 
-        print_msg('Slides directory created: %s' % name, GOOD)
+        print_good('Slides directory created: %s' % name)
         return 0
 
     elif args.slides is not None:
@@ -860,7 +861,7 @@ def main():
         with open('%s.tex' % name, 'w+') as f:
             f.write(template_slides)
 
-        print_msg('Slides template created: %s.tex' % name, GOOD)
+        print_good('Slides template created: %s.tex' % name)
         return 0
 
 
@@ -962,7 +963,7 @@ def main():
 
 
     if main_tex is None:
-        print_msg('There is no tex to compile...', ERROR)
+        print_err('There is no tex to compile...')
         return 1
 
 
@@ -997,7 +998,7 @@ def main():
         tmp_py  = get_clatex_path('%s.tmp.py' % main_name)
         tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
 
-        print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
+        print_info('Creating tex %s --> %s' % (main_tex, tmp_tex))
         create_python_text(main_tex, tmp_py, tmp_tex)
 
     elif is_tikz:
@@ -1005,7 +1006,7 @@ def main():
         need_crop = True if not args.nocrop else False
         args.engine = 'pdflatex'
 
-        print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
+        print_info('Creating tex %s --> %s' % (main_tex, tmp_tex))
         create_tikz_tex(main_tex, tmp_tex)
 
     elif is_table:
@@ -1013,13 +1014,13 @@ def main():
         need_crop = True if not args.nocrop else False
         args.engine = 'pdflatex'
 
-        print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
+        print_info('Creating tex %s --> %s' % (main_tex, tmp_tex))
         create_table_tex(main_tex, tmp_tex, args.scale)
 
     elif is_plain:
         tmp_tex = get_clatex_path('%s.tex' % main_name) if args.tex is None else args.tex
 
-        print_msg('Creating tex %s --> %s' % (main_tex, tmp_tex), INFO)
+        print_info('Creating tex %s --> %s' % (main_tex, tmp_tex))
         create_plain_tex(main_tex, tmp_tex)
 
     # exit now if only create tex option is used

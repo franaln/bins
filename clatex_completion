@@ -13,7 +13,7 @@ _clatex()
   opts="-h --help -f -c -g -q -o -p -v -b -a -j -t --onlytex -z -k --tikz --table --plain --plots --filter -w -e --engine --sl --sd"
 
   if [[ "$cur" != -* ]]; then
-        _filedir '@(tex)' '@(py)'
+        _filedir '@(tex|py)'
   else
       COMPREPLY=( $( compgen -W "$opts" -- "$cur" ) )
   fi
